@@ -51,6 +51,85 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Setting takes effect only if CreateVpc is set to "existing" (specify at EXACTLY 2)
 
+  #Jumpbox
+  Jumpbox:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to deploy a Windows Server Jumpbox attached to the domain
+
+  JumpboxAmi:
+    Type: AWS::EC2::Image::Id
+    Description: Windows 2016 or 2019 Base AMI available in your region (default value is current Windows 2019 Base AMI in us-east-1 at time of writing)
+    Default: ami-04ca2d0801450d495
+
+  JumpboxKeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: KeyPair for EC2 Instance
+    Default: mariusmitrofan
+
+  JumpboxType:
+    Type: String
+    Default: 'public-ip'
+    AllowedValues:
+      - public-ip
+      - private-ip
+    Description: Whether to deploy the jumpbox with public ip or not
+
+  JumpboxInstanceType:
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+    - t1.micro
+    - t2.micro
+    - t2.small
+    - t2.medium
+    - m1.small
+    - m1.medium
+    - m1.large
+    - m1.xlarge
+    - m2.xlarge
+    - m2.2xlarge
+    - m2.4xlarge
+    - m3.medium
+    - m3.large
+    - m3.xlarge
+    - m3.2xlarge
+    - c1.medium
+    - c1.xlarge
+    - c3.large
+    - c3.xlarge
+    - c3.2xlarge
+    - c3.4xlarge
+    - c3.8xlarge
+    - c4.large
+    - c4.xlarge
+    - c4.2xlarge
+    - c4.4xlarge
+    - c4.8xlarge
+    - g2.2xlarge
+    - r3.large
+    - r3.xlarge
+    - r3.2xlarge
+    - r3.4xlarge
+    - r3.8xlarge
+    - i2.xlarge
+    - i2.2xlarge
+    - i2.4xlarge
+    - i2.8xlarge
+    - d2.xlarge
+    - d2.2xlarge
+    - d2.4xlarge
+    - d2.8xlarge
+    - hi1.4xlarge
+    - hs1.8xlarge
+    - cr1.8xlarge
+    - cc2.8xlarge
+    - cg1.4xlarge
+    ConstraintDescription: Must be a valid EC2 instance type.
+
   # Subnets
   VPCSubnetCidrBlock:
     Description: 172.20.0.0/16 = 172.20.0.0-172.20.255.255 = 256 Subnets = 65534 hosts
@@ -160,6 +239,16 @@ Conditions:
       - Ref: NewVpc
       - existing
 
+  DeployJumpbox:
+    Fn::Equals:
+      - Ref: Jumpbox
+      - 'true'
+
+  PublicJumpbox:
+    Fn::Equals:
+      - Ref: JumpboxType
+      - public-ip
+
 Resources:
   AWSDirectoryExistingVpc:
     Condition: DoNotCreateVpc
@@ -217,6 +306,135 @@ Resources:
             - CreateVpc
             - Ref: VPC
             - Ref: VpcId
+
+  SsmDocument:
+    Condition: DeployJumpbox
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '1.2'
+        description: Join instances to an AWS Directory Service domain.
+        parameters:
+          directoryId:
+            type: String
+            description: "(Required) The ID of the AWS Directory Service directory."
+          directoryName:
+            type: String
+            description: "(Required) The name of the directory; for example, test.example.com"
+          dnsIpAddresses:
+            type: StringList
+            default: []
+            description: "(Optional) The IP addresses of the DNS servers in the directory.
+              Required when DHCP is not configured. Learn more at http://docs.aws.amazon.com/directoryservice/latest/simple-ad/join_get_dns_addresses.html"
+            allowedPattern: "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+        runtimeConfig:
+          aws:domainJoin:
+            properties:
+              directoryId: "{{ directoryId }}"
+              directoryName: "{{ directoryName }}"
+              dnsIpAddresses: "{{ dnsIpAddresses }}"
+
+  JumpboxEc2:
+    Condition: DeployJumpbox
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile:
+        Ref: InstanceProfile
+      SsmAssociations:
+      - DocumentName:
+          Ref: SsmDocument
+        AssociationParameters:
+        - Key: directoryId
+          Value:
+            Fn::If:
+              - CreateVpc
+              - [ Ref: AWSDirectoryNewVpc ]
+              - [ Ref: AWSDirectoryExistingVpc ]
+        - Key: directoryName
+          Value:
+          - Ref: Name
+        - Key: dnsIpAddresses
+          Value:
+            Fn::If:
+              - CreateVpc
+              - 
+                - Fn::Select:
+                    - 0
+                    - Fn::GetAtt: AWSDirectoryNewVpc.DnsIpAddresses
+                - Fn::Select:
+                    - 1
+                    - Fn::GetAtt: AWSDirectoryNewVpc.DnsIpAddresses
+              - 
+                - Fn::Select:
+                    - 0
+                    - Fn::GetAtt: AWSDirectoryExistingVpc.DnsIpAddresses
+                - Fn::Select:
+                    - 1
+                    - Fn::GetAtt: AWSDirectoryExistingVpc.DnsIpAddresses
+      KeyName:
+        Ref: JumpboxKeyPair
+      ImageId:
+        Ref: JumpboxAmi
+      InstanceType:
+        Ref: JumpboxInstanceType
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: "${AWS::StackName}-Jumpbox"
+      NetworkInterfaces:
+      - AssociatePublicIpAddress:
+          Fn::If:
+            - PublicJumpbox
+            - 'true'
+            - 'false'
+        DeviceIndex: '0'
+        GroupSet:
+        - Ref: InstanceSecurityGroup
+        SubnetId:
+          Fn::If:
+            - CreateVpc
+            - Fn::If:
+              - PublicJumpbox
+              - Ref: PublicSubnet1
+              - Ref: PrivateSubnet1
+            - Fn::Select: [ 0, Ref: SubnetIds ]
+
+  InstanceRole:
+    Condition: DeployJumpbox
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  InstanceProfile:
+    Condition: DeployJumpbox
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - Ref: InstanceRole
+
+  InstanceSecurityGroup:
+    Condition: DeployJumpbox
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '3389'
+        ToPort: '3389'
+        CidrIp: 0.0.0.0/0
 
   VPC:
     Condition: CreateVpc
@@ -734,6 +952,17 @@ Resources:
         CidrIp: 0.0.0.0/0
 
 Outputs:
+  JumpboxIp:
+    Condition: DeployJumpbox
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-JumpboxIp"
+    Value:
+      Fn::If:
+        - PublicJumpbox
+        - Fn::GetAtt: JumpboxEc2.PublicIp
+        - Fn::GetAtt: JumpboxEc2.PrivateIp
+
   DnsIpAddresses:
     Export:
       Name:
@@ -747,7 +976,6 @@ Outputs:
         - Fn::Join:
           - ", "
           - Fn::GetAtt: AWSDirectoryExistingVpc.DnsIpAddresses
-
 
   VpcId:
     Condition: CreateVpc
@@ -819,6 +1047,11 @@ Metadata:
       - NewVpc
       - VpcId
       - SubnetIds
+      - Jumpbox
+      - JumpboxAmi
+      - JumpboxKeyPair
+      - JumpboxType
+      - JumpboxInstanceType
 
     - Label:
         default: Remote Access
