@@ -1,0 +1,13 @@
+DEPENDENCIES
+  openvpn_stack
+    path: .
+    metadata: true
+
+GRAPH
+  apt (7.1.1)
+  ohai (5.2.5)
+  openvpn_stack (1.0.0)
+    apt (>= 0.0.0)
+    sysctl (>= 0.0.0)
+  sysctl (1.0.5)
+    ohai (>= 5.0)

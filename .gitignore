@@ -4,3 +4,5 @@ easy-rsa/
 \.DS_Store
 
 *.zip
+
+*.gz
