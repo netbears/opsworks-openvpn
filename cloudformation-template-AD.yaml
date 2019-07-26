@@ -1,7 +1,7 @@
 Description: Launch ActiveDirectory SimpleAD stack within its own VPC or an existing VPC
 
 Parameters:
-  
+
   #ActiveDirectory
   Size:
     Type: String
@@ -1047,12 +1047,14 @@ Metadata:
       - NewVpc
       - VpcId
       - SubnetIds
+    - Label:
+        default: Jumpbox
+      Parameters:
       - Jumpbox
       - JumpboxAmi
       - JumpboxKeyPair
       - JumpboxType
       - JumpboxInstanceType
-
     - Label:
         default: Remote Access
       Parameters:
@@ -1114,3 +1116,29 @@ Metadata:
         default: Private Inbound
       AllowAllOutboundPrivateRuleNumber:
         default: Private Outbound
+      Jumpbox:
+        default: Deploy jumpbox
+      JumpboxAmi:
+        default: Jumpbox AMI
+      JumpboxKeyPair:
+        default: Jumpbox SSH KeyPair
+      JumpboxType:
+        default: Jumpbox Instance IP (public/private)
+      JumpboxInstanceType:
+        default: Jumpbox Instance Size
+      Size:
+        default: Active Directory Size
+      EnableSso:
+        default: Active Directory SSO
+      Name:
+        default: Active Directory Name
+      ShortName:
+        default: Active Directory NetBIOS Name
+      Password:
+        default: Active Directory Admin Password
+      NewVpc:
+        default: Active Directory - Launch in new or existing VPC
+      VpcId:
+        default: Active Directory - If Existing, which VPC
+      SubnetIds:
+        default: Active Directory - If existing, which Subnets
