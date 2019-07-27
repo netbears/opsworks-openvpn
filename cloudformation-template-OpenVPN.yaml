@@ -46,11 +46,6 @@ Parameters:
     Description: SSL ARN from Certificate Manager
     Default: arn:aws:acm:us-east-1:359360911388:certificate/0fbec0ab-69ea-46ab-bb0f-aecd359b4621
 
-  AdminPassword:
-    Type: String
-    NoEcho: 'true'
-    Default: '2yfJ3C3b59L7GCke'
-
   DnsRecord:
     Type: String
     Default: vpn.aws.netbears.com
@@ -60,26 +55,32 @@ Parameters:
     Description: Route53 hosted zone in which to place dns record
 
   #LDAP
-  LdapAdminUserDn:
+  LdapBindDn:
     Type: String
     Default: openvpn@netbears.com
 
-  LdapAdminUserPassword:
+  LdapBindPassword:
     Type: String
     NoEcho: 'true'
     Default: 'pgZzB5Wu8N3mqyg3'
 
-  LdapHostname:
+  LdapIp1:
     Type: String
-    Default: ldap.aws.netbears.com:389
+
+  LdapIp2:
+    Type: String
 
   LdapUsersBaseDn:
     Type: String
-    Default: OU=NETBEARS,OU=Users,DC=netbears,DC=com
+    Default: OU=Users,OU=NETBEARS,DC=netbears,DC=com
 
   LdapGroupVPNRequirement:
     Type: String
-    Default: memberOf=CN=VPN,OU=NETBEARS,OU=Groups,DC=netbears,DC=com
+    Default: memberOf=CN=VPN,OU=Groups,OU=NETBEARS,DC=netbears,DC=com
+
+  LdapAdminUsername:
+    Type: String
+    Default: mariusmitrofan
 
   #Network
   ClientNetmask:
@@ -90,10 +91,56 @@ Parameters:
     Type: String
     Default: '172.20.112.0'
 
-  PrivateNetworkAccess:
+  PrivateNetworkAccess1:
     Type: String
-    Description: Set the VPC CIDR that you want to provide access to
+    Description: Set the VPC CIDR that you want to provide access to. Leave empty if none
     Default: "172.20.0.0/16"
+
+  PrivateNetworkAccess2:
+    Type: String
+    Description: Set the VPC CIDR that you want to provide access to. Leave empty if none
+    Default: "172.17.0.0/16"
+
+  PrivateNetworkAccess3:
+    Type: String
+    Description: Set the VPC CIDR that you want to provide access to. Leave empty if none
+    Default: "172.23.0.0/16"
+
+  WebPort:
+    Type: String
+    Default: '443'
+
+  ClientsTalkEachOther:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  RouteInternetTraffic:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to route Internet traffic through OpenVPN or not
+
+  DaemonListenPort:
+    Type: String
+    Default: '80'
+
+  DaemonListenProtocol:
+    Type: String
+    Default: 'tcp'
+    AllowedValues:
+      - 'tcp'
+      - 'udp'
+
+Conditions:
+  IsTcpDaemon:
+    Fn::Equals:
+      - Ref: DaemonListenProtocol
+      - tcp
 
 Resources:
 
@@ -202,20 +249,22 @@ Resources:
         Ref: VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort:
+            Ref: WebPort
+          ToPort:
+            Ref: WebPort
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 943
-          ToPort: 943
+          FromPort:
+            Ref: DaemonListenPort
+          ToPort:
+            Ref: DaemonListenPort
           CidrIp: 0.0.0.0/0
         - IpProtocol: udp
-          FromPort: 1194
-          ToPort: 1194
+          FromPort:
+            Ref: DaemonListenPort
+          ToPort:
+            Ref: DaemonListenPort
           CidrIp: 0.0.0.0/0
 
   OpsWorksStack: 
@@ -251,54 +300,26 @@ Resources:
         Fn::Sub: |
           {
             "openvpnas": {
-                "version": "${Version}",
-                "ubuntu_version": "Ubuntu18",
-                "pass": "${AdminPassword}",
-                "https": {
-                    "ip_address": "ens5",
-                    "port": "443"
-                },
-                "ldap": {
-                    "bind_dn": "${LdapAdminUserDn}",
-                    "bind_pw": "${LdapAdminUserPassword}",
-                    "host": "${LdapHostname}",
-                    "ssl_verify": "never",
-                    "uname_attr": "sAMAccountName",
-                    "use_ssl": "never",
-                    "users_base_dn": "${LdapUsersBaseDn}",
-                    "add_req": "${LdapGroupVPNRequirement}"
-                },
-                "host": {
-                    "name": "${DnsRecord}"
-                },
-                "daemon": {
-                    "client": {
-                        "netmask_bits": "${ClientNetmask}",
-                        "network": "${ClientNetwork}"
-                    }
-                },
-                "server": {
-                    "daemon": {
-                        "tcp": {
-                            "port": "80"
-                        },
-                        "udp": {
-                            "port": "1194"
-                        }
-                    },
-                    "routing": {
-                        "gateway_access": "true",
-                        "private_access": "nat",
-                        "private_network": {
-                            "0": "${PrivateNetworkAccess}"
-                        },
-                        "routed_subnets": {}
-                    },
-                    "tls_auth": "true",
-                    "tls_version_min": "1.2",
-                    "do_reauth": "true",
-                    "internal": "360"
-                }
+              "version": "${Version}",
+              "ubuntu_version": "Ubuntu18",
+              "admin_ui.https.port": "${WebPort}",
+              "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
+              "auth.ldap.0.bind_dn": "${LdapBindDn}",
+              "auth.ldap.0.bind_pw": "${LdapBindPassword}",
+              "auth.ldap.0.server.0.host": "${LdapIp1}",
+              "auth.ldap.0.server.1.host": "${LdapIp2}",
+              "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
+              "cs.https.port": "${WebPort}",
+              "host.name": "${DnsRecord}",
+              "vpn.client.routing.inter_client": "${ClientsTalkEachOther}",
+              "vpn.client.routing.reroute_gw": "${RouteInternetTraffic}",
+              "vpn.daemon.0.client.netmask_bits": "${ClientNetmask}",
+              "vpn.daemon.0.client.network": "${ClientNetwork}",
+              "vpn.daemon.0.listen.port": "${DaemonListenPort}",
+              "vpn.daemon.0.listen.protocol": "${DaemonListenProtocol}",
+              "vpn.server.routing.private_network.0": "${PrivateNetworkAccess1}",
+              "vpn.server.routing.private_network.1": "${PrivateNetworkAccess2}",
+              "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}"
             }
           }
       Tags:
@@ -317,24 +338,28 @@ Resources:
     Properties:
       HealthCheck:
         Interval: 30
-        Target: TCP:443
+        Target: TCP:22
         Timeout: 5
         UnhealthyThreshold: 5
         HealthyThreshold: 5
       Listeners:
-        - InstancePort: 80
-          LoadBalancerPort: 80
-          Protocol: TCP
-        - InstancePort: 443
-          LoadBalancerPort: 443
+        - Fn::If:
+          - IsTcpDaemon
+          - InstancePort:
+              Ref: DaemonListenPort
+            LoadBalancerPort:
+              Ref: DaemonListenPort
+            Protocol: SSL
+            SSLCertificateId:
+              Ref: SslLoadBalancer
+          - Ref: AWS::NoValue
+        - InstancePort:
+            Ref: WebPort
+          LoadBalancerPort:
+            Ref: WebPort
           Protocol: HTTPS
           PolicyNames:
             - Fn::Sub: ${AWS::StackName}
-          SSLCertificateId:
-            Ref: SslLoadBalancer
-        - InstancePort: 943
-          LoadBalancerPort: 943
-          Protocol: SSL
           SSLCertificateId:
             Ref: SslLoadBalancer
       Scheme: internet-facing
@@ -353,7 +378,7 @@ Resources:
   Layer:
     Type: AWS::OpsWorks::Layer
     Properties:
-      Name: ElasticSearch
+      Name: OpenVPN
       Shortname: openvpn-
       Type: custom
       EnableAutoHealing: 'false'
@@ -363,7 +388,7 @@ Resources:
         Ref: OpsWorksStack
       CustomRecipes:
         Setup:
-          - 'openvpn::setup'
+          - 'openvpn_stack::setup'
       UseEbsOptimizedInstances: True
       CustomSecurityGroupIds:
         - Fn::GetAtt: Ec2SecurityGroup.GroupId
@@ -377,39 +402,63 @@ Resources:
       LayerId: 
         Ref: Layer
 
-  # InstanceId1: 
-  #   Type: AWS::OpsWorks::Instance
-  #   DependsOn: Elb
-  #   Properties: 
-  #     StackId: 
-  #       Ref: OpsWorksStack
-  #     LayerIds: 
-  #       - Ref: Layer
-  #     InstanceType:
-  #       Ref: InstanceType
-  #     RootDeviceType: ebs
-  #     SubnetId:
-  #       Ref: SubnetIdHost
-  #     Hostname: openvpn-1
-  #     BlockDeviceMappings:
-  #       - DeviceName: ROOT_DEVICE
-  #         Ebs:
-  #           VolumeType: gp2
-  #           VolumeSize:
-  #             Ref: InstanceRootVolumeSize
+  InstanceOpsWorks: 
+    Type: AWS::OpsWorks::Instance
+    DependsOn: Elb
+    Properties: 
+      StackId: 
+        Ref: OpsWorksStack
+      LayerIds: 
+        - Ref: Layer
+      InstanceType:
+        Ref: InstanceType
+      RootDeviceType: ebs
+      SubnetId:
+        Ref: SubnetIdHost
+      Hostname: openvpn-1
+      BlockDeviceMappings:
+        - DeviceName: ROOT_DEVICE
+          Ebs:
+            VolumeType: gp2
+            VolumeSize:
+              Ref: InstanceRootVolumeSize
+
+  Route53Record:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId:
+        Ref: DnsZone
+      Comment: 
+        Fn::Sub: Route53-record-for-OpenVPN
+      RecordSets:
+      - Name:
+          Ref: DnsRecord
+        Type: A
+        AliasTarget:
+          HostedZoneId: 
+            Fn::GetAtt:
+              - Elb
+              - CanonicalHostedZoneNameID
+          DNSName: 
+            Fn::GetAtt:
+              - Elb
+              - DNSName
 
 
-# Outputs:
-#   JumpboxIp:
-#     Condition: DeployJumpbox
-#     Export:
-#       Name:
-#         Fn::Sub: "${AWS::StackName}-JumpboxIp"
-#     Value:
-#       Fn::If:
-#         - PublicJumpbox
-#         - Fn::GetAtt: JumpboxEc2.PublicIp
-#         - Fn::GetAtt: JumpboxEc2.PrivateIp
+Outputs:
+  AdminUrl:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-AdminUrl"
+    Value:
+      Fn::Sub: "https://${DnsRecord}:${WebPort}/admin"
+
+  ClientUrl:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ClientUrl"
+    Value:
+      Fn::Sub: "https://${DnsRecord}:${WebPort}"
 
 
 Metadata:
@@ -434,17 +483,27 @@ Metadata:
     - Label:
         default: LDAP
       Parameters:
-      - LdapAdminUserDn
-      - LdapAdminUserPassword
-      - LdapHostname
+      - LdapBindDn
+      - LdapBindPassword
+      - LdapIp1
+      - LdapIp2
       - LdapUsersBaseDn
       - LdapGroupVPNRequirement
+      - LdapAdminUsername
     - Label:
         default: Network
       Parameters:
       - ClientNetmask
       - ClientNetwork
       - PrivateNetworkAccess
+      - RouteInternetTraffic
+      - ClientsTalkEachOther
+      - DaemonListenProtocol
+      - DaemonListenPort
+      - PrivateNetworkAccess1
+      - PrivateNetworkAccess2
+      - PrivateNetworkAccess3
+      - WebPort
     ParameterLabels:
       CookbookUrl:
         default: Cookbook URL
@@ -470,19 +529,33 @@ Metadata:
         default: OpenVPN DNS hostname
       DnsZone:
         default: OpenVPN DNS Zone
-      LdapAdminUserDn:
-        default: LDAP username for OpenVPN
-      LdapAdminUserPassword:
-        default: LDAP password for OpenVPN
-      LdapHostname:
-        default: LDAP hostname
+      LdapBindDn:
+        default: LDAP username for OpenVPN used for querying
+      LdapBindPassword:
+        default: LDAP password for OpenVPN used for querying
+      LdapIp1:
+        default: LDAP IP 1
+      LdapIp2:
+        default: LDAP IP 2
       LdapUsersBaseDn:
         default: LDAP base user DN
       LdapGroupVPNRequirement:
         default: LDAP group requirement
+      LdapAdminUsername:
+        default: LDAP admin username
       ClientNetmask:
         default: Client network mask
       ClientNetwork:
         default: Client network ip
-      PrivateNetworkAccess:
-        default: Client network AWS access ip cidr
+      PrivateNetworkAccess1:
+        default: Client network AWS access ip cidr 1
+      PrivateNetworkAccess2:
+        default: Client network AWS access ip cidr 2
+      PrivateNetworkAccess3:
+        default: Client network AWS access ip cidr 3
+      RouteInternetTraffic:
+        default: Client network traffic routed through OpenVPN
+      WebPort:
+        default: Port to use for HTTPS web interface
+      ClientsTalkEachOther:
+        default: Should the clients talk to each other?

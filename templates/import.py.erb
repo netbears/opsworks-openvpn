@@ -1,0 +1,17 @@
+import os
+import json
+
+with open ('<%= node["openvpnas"]["config_path"] %>') as json_file:
+	data = json.load(json_file)
+
+for prop in data:
+	command = '/usr/local/openvpn_as/scripts/sacli --key "{}" --value "{}" ConfigPut'.format(prop,data[prop])
+	os.system(command)
+
+os.system('/usr/local/openvpn_as/scripts/sacli --user <%= node["openvpnas"]["admin_username"] %> --key "prop_superuser" --value "true" UserPropPut')
+
+os.system('/usr/local/openvpn_as/scripts/sacli --user openvpn --key "prop_superuser" --value "false" UserPropPut')
+
+os.system('/usr/local/openvpn_as/scripts/sacli --user openvpn UserPropDelAll')
+
+os.system('/usr/local/openvpn_as/scripts/sacli start')

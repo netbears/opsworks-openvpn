@@ -1,0 +1,46 @@
+{
+  "admin_ui.https.ip_address": "<%= node['openvpnas']['admin_ui.https.ip_address'] %>",
+  "admin_ui.https.port": "<%= node['openvpnas']['admin_ui.https.port'] %>",
+  "aui.eula_version": "<%= node['openvpnas']['aui.eula_version'] %>",
+  "auth.ldap.0.add_req": "<%= node['openvpnas']['auth.ldap.0.add_req'] %>",
+  "auth.ldap.0.bind_dn": "<%= node['openvpnas']['auth.ldap.0.bind_dn'] %>",
+  "auth.ldap.0.bind_pw": "<%= node['openvpnas']['auth.ldap.0.bind_pw'] %>",
+  "auth.ldap.0.name": "<%= node['openvpnas']['auth.ldap.0.name'] %>",
+  "auth.ldap.0.server.0.host": "<%= node['openvpnas']['auth.ldap.0.server.0.host'] %>",
+  "auth.ldap.0.server.1.host": "<%= node['openvpnas']['auth.ldap.0.server.1.host'] %>",
+  "auth.ldap.0.ssl_verify": "<%= node['openvpnas']['auth.ldap.0.ssl_verify'] %>",
+  "auth.ldap.0.timeout": "<%= node['openvpnas']['auth.ldap.0.timeout'] %>",
+  "auth.ldap.0.uname_attr": "<%= node['openvpnas']['auth.ldap.0.uname_attr'] %>",
+  "auth.ldap.0.use_ssl": "<%= node['openvpnas']['auth.ldap.0.use_ssl'] %>",
+  "auth.ldap.0.users_base_dn": "<%= node['openvpnas']['auth.ldap.0.users_base_dn'] %>",
+  "auth.module.type": "<%= node['openvpnas']['auth.module.type'] %>",
+  "cs.https.ip_address": "<%= node['openvpnas']['cs.https.ip_address'] %>",
+  "cs.https.port": "<%= node['openvpnas']['cs.https.port'] %>",
+  "host.name": "<%= node['openvpnas']['host.name'] %>",
+  "vpn.client.routing.inter_client": "<%= node['openvpnas']['vpn.client.routing.inter_client'] %>",
+  "vpn.client.routing.reroute_dns": "<%= node['openvpnas']['vpn.client.routing.reroute_dns'] %>",
+  "vpn.client.routing.reroute_gw": "<%= node['openvpnas']['vpn.client.routing.reroute_gw'] %>",
+  "vpn.client.routing.superuser_c2c_access": "<%= node['openvpnas']['vpn.client.routing.superuser_c2c_access'] %>",
+  "vpn.client.config_text": "<%= node['openvpnas']['vpn.client.config_text'] %>",
+  "vpn.daemon.0.client.netmask_bits": "<%= node['openvpnas']['vpn.daemon.0.client.netmask_bits'] %>",
+  "vpn.daemon.0.client.network": "<%= node['openvpnas']['vpn.daemon.0.client.network'] %>",
+  "vpn.daemon.0.listen.ip_address": "<%= node['openvpnas']['vpn.daemon.0.listen.ip_address'] %>",
+  "vpn.daemon.0.listen.port": "<%= node['openvpnas']['vpn.daemon.0.listen.port'] %>",
+  "vpn.daemon.0.listen.protocol": "<%= node['openvpnas']['vpn.daemon.0.listen.protocol'] %>",
+  "vpn.daemon.0.server.ip_address": "<%= node['openvpnas']['vpn.daemon.0.server.ip_address'] %>",
+  "vpn.server.daemon.enable": "<%= node['openvpnas']['vpn.server.daemon.enable'] %>",
+  "vpn.server.routing.gateway_access": "<%= node['openvpnas']['vpn.server.routing.gateway_access'] %>",
+  "vpn.server.routing.private_access": "<%= node['openvpnas']['vpn.server.routing.private_access'] %>",
+  "vpn.server.routing.private_network.0": "<%= node['openvpnas']['vpn.server.routing.private_network.0'] %>",
+
+  <% if node['openvpnas']['vpn.server.routing.private_network.1'] != "" -%>
+  "vpn.server.routing.private_network.1": "<%= node['openvpnas']['vpn.server.routing.private_network.1'] %>",
+  <% end -%>
+
+  <% if node['openvpnas']['vpn.server.routing.private_network.2'] != "" -%>
+  "vpn.server.routing.private_network.2": "<%= node['openvpnas']['vpn.server.routing.private_network.2'] %>",
+  <% end -%>
+
+  "vpn.server.duplicate_cn": "<%= node['openvpnas']['vpn.server.duplicate_cn'] %>",
+  "vpn.server.config_text": "<%= node['openvpnas']['vpn.server.config_text'] %>"
+}
