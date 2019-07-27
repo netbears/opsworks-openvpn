@@ -42,5 +42,4 @@ execute 'import_vpn_settings' do
   command <<-BASH
     python3 #{node['openvpnas']['config_script']}/import.py
   BASH
-  action :nothing
 end
