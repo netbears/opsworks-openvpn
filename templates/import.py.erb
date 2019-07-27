@@ -1,7 +1,7 @@
 import os
 import json
 
-with open ('<%= node["openvpnas"]["config_path"] %>') as json_file:
+with open ('<%= node["openvpnas"]["config_path"] %>/config.json') as json_file:
 	data = json.load(json_file)
 
 for prop in data:

@@ -32,15 +32,12 @@
   "vpn.server.routing.gateway_access": "<%= node['openvpnas']['vpn.server.routing.gateway_access'] %>",
   "vpn.server.routing.private_access": "<%= node['openvpnas']['vpn.server.routing.private_access'] %>",
   "vpn.server.routing.private_network.0": "<%= node['openvpnas']['vpn.server.routing.private_network.0'] %>",
-
   <% if node['openvpnas']['vpn.server.routing.private_network.1'] != "" -%>
   "vpn.server.routing.private_network.1": "<%= node['openvpnas']['vpn.server.routing.private_network.1'] %>",
   <% end -%>
-
   <% if node['openvpnas']['vpn.server.routing.private_network.2'] != "" -%>
   "vpn.server.routing.private_network.2": "<%= node['openvpnas']['vpn.server.routing.private_network.2'] %>",
   <% end -%>
-
   "vpn.server.duplicate_cn": "<%= node['openvpnas']['vpn.server.duplicate_cn'] %>",
   "vpn.server.config_text": "<%= node['openvpnas']['vpn.server.config_text'] %>"
 }
