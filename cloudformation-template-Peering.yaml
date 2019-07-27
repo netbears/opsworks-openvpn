@@ -1,0 +1,102 @@
+Description: Deploy a VPC peering between 2 VPCs
+
+Parameters:
+
+  #Source
+  SourceVpcId:
+    Type: AWS::EC2::VPC::Id
+
+  SourceVpcCidr:
+    Type: String
+    Default: 172.20.0.0/16
+
+  SourcePrivateRouteTable:
+    Type: String
+
+  SourcePublicRouteTable:
+    Type: String
+
+  #Target
+  TargetVpcId:
+    Type: AWS::EC2::VPC::Id
+
+  TargetVpcCidr:
+    Type: String
+    Default: 172.17.0.0/16
+
+  TargetPrivateRouteTable:
+    Type: String
+
+  TargetPublicRouteTable:
+    Type: String
+
+Resources:
+  VpcPeering:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      PeerOwnerId:
+        Ref: AWS::AccountId
+      PeerRegion:
+        Ref: AWS::Region
+      VpcId:
+        Ref: SourceVpcId
+      PeerVpcId:
+        Ref: TargetVpcId
+
+  SourcePrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: SourcePrivateRouteTable
+      DestinationCidrBlock:
+        Ref: TargetVpcCidr
+      VpcPeeringConnectionId:
+        Ref: VpcPeering
+
+  SourcePublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: SourcePublicRouteTable
+      DestinationCidrBlock:
+        Ref: TargetVpcCidr
+      VpcPeeringConnectionId:
+        Ref: VpcPeering
+
+  TargetPrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: TargetPrivateRouteTable
+      DestinationCidrBlock:
+        Ref: SourceVpcCidr
+      VpcPeeringConnectionId:
+        Ref: VpcPeering
+
+  TargetPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: TargetPublicRouteTable
+      DestinationCidrBlock:
+        Ref: SourceVpcCidr
+      VpcPeeringConnectionId:
+        Ref: VpcPeering
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Source
+      Parameters:
+      - SourceVpcId
+      - SourceVpcCidr
+      - SourcePrivateRouteTable
+      - SourcePublicRouteTable
+    - Label:
+        default: Target
+      Parameters:
+      - TargetVpcId
+      - TargetVpcCidr
+      - TargetPrivateRouteTable
+      - TargetPublicRouteTable
