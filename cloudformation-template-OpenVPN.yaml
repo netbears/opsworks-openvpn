@@ -302,7 +302,7 @@ Resources:
             "openvpnas": {
               "version": "${Version}",
               "ubuntu_version": "Ubuntu18",
-              "admin_username": "${LdapAdminUsername}"
+              "admin_username": "${LdapAdminUsername}",
               "admin_ui.https.port": "${WebPort}",
               "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
               "auth.ldap.0.bind_dn": "${LdapBindDn}",
