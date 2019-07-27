@@ -34,6 +34,10 @@ template "#{node['openvpnas']['config_script']}/import.py" do
   mode  '0755'
 end
 
+service 'openvpnas' do
+  action :restart
+end
+
 execute 'import_vpn_settings' do
   command <<-BASH
     python3 #{node['openvpnas']['config_script']}/import.py

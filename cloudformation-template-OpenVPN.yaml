@@ -351,6 +351,7 @@ Resources:
             LoadBalancerPort:
               Ref: DaemonListenPort
             Protocol: SSL
+            InstanceProtocol: SSL
             SSLCertificateId:
               Ref: SslLoadBalancer
           - Ref: AWS::NoValue
@@ -359,6 +360,7 @@ Resources:
           LoadBalancerPort:
             Ref: WebPort
           Protocol: HTTPS
+          InstanceProtocol: HTTPS
           PolicyNames:
             - Fn::Sub: ${AWS::StackName}
           SSLCertificateId:
