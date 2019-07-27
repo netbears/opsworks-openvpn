@@ -53,6 +53,7 @@ Parameters:
   DnsZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 hosted zone in which to place dns record
+    Default: Z37W7PCK0HCQPS
 
   #LDAP
   LdapBindDn:
@@ -350,8 +351,8 @@ Resources:
               Ref: DaemonListenPort
             LoadBalancerPort:
               Ref: DaemonListenPort
-            Protocol: SSL
-            InstanceProtocol: SSL
+            Protocol: TCP
+            InstanceProtocol: TCP
             SSLCertificateId:
               Ref: SslLoadBalancer
           - Ref: AWS::NoValue
