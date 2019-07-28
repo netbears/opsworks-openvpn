@@ -193,7 +193,7 @@ Resources:
               kms = boto3.client('kms',region_name="${AWS::Region}")
               secret = kms.encrypt(KeyId="${LdapPasswordKey.Arn}",Plaintext="${LdapBindPassword}")
               blob = secret["CiphertextBlob"]
-              responseValue["Value"] = str(base64.b64encode(blob))
+              responseValue["Value"] = str(base64.b64encode(blob))[2:-1]
               cfnresponse.send(event, context, cfnresponse.SUCCESS, responseValue)
               return True
 
