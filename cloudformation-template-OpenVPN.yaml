@@ -144,6 +144,96 @@ Conditions:
       - tcp
 
 Resources:
+  KmsEncryptRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [lambda.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Policies:
+      - PolicyName:
+          Fn::Sub: ${AWS::StackName}-KMS
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Encrypt*
+            - kms:Get*
+            - kms:List*
+            - kms:Describe*
+            Resource: '*'
+      - PolicyName:
+          Fn::Sub: ${AWS::StackName}-CloudWatch
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            - cloudwatch:*
+            Resource: '*'
+
+  KmsEncryptFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Runtime: python3.7
+      Role:
+        Fn::GetAtt: KmsEncryptRole.Arn
+      Code:
+        ZipFile:
+          Fn::Sub: |
+            import boto3
+            import cfnresponse
+            import base64
+            def lambda_handler(event, context):
+              responseValue={}
+              kms = boto3.client('kms',region_name="${AWS::Region}")
+              secret = kms.encrypt(KeyId="${LdapPasswordKey.Arn}",Plaintext="${LdapBindPassword}")
+              blob = secret["CiphertextBlob"]
+              responseValue["Value"]=base64.b64encode(blob)
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, responseValue)
+              return True
+
+  KmsEncryptResult:
+    Type: Custom::KmsEncryptLdapBindPassword
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: KmsEncryptFunction.Arn
+
+  LdapPasswordKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: kms:*
+            Resource: "*"
+            Principal:
+              AWS:
+                - Fn::Sub: arn:aws:iam::${AWS::AccountId}:root
+          - Effect: Allow
+            Action: kms:Encrypt
+            Resource: "*"
+            Principal:
+              AWS:
+                - Fn::GetAtt: KmsEncryptRole.Arn
+          - Effect: Allow
+            Action: kms:Decrypt
+            Resource: "*"
+            Principal:
+              AWS:
+                - Fn::GetAtt: InstanceRole.Arn
+
+  LdapPasswordAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/OpenVPN
+      TargetKeyId:
+        Ref: LdapPasswordKey
 
   ServiceRole:
     Type: AWS::IAM::Role
@@ -307,7 +397,7 @@ Resources:
               "admin_ui.https.port": "${WebPort}",
               "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
               "auth.ldap.0.bind_dn": "${LdapBindDn}",
-              "auth.ldap.0.bind_pw": "${LdapBindPassword}",
+              "auth.ldap.0.bind_pw": "${KmsEncryptResult.Value}",
               "auth.ldap.0.server.0.host": "${LdapIp1}",
               "auth.ldap.0.server.1.host": "${LdapIp2}",
               "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
@@ -463,7 +553,6 @@ Outputs:
         Fn::Sub: "${AWS::StackName}-ClientUrl"
     Value:
       Fn::Sub: "https://${DnsRecord}:${WebPort}"
-
 
 Metadata:
   AWS::CloudFormation::Interface:
