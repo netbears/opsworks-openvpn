@@ -397,7 +397,7 @@ Resources:
               "admin_ui.https.port": "${WebPort}",
               "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
               "auth.ldap.0.bind_dn": "${LdapBindDn}",
-              "auth.ldap.0.bind_pw": "${KmsEncryptResult.Value}",
+              "auth.ldap.0.bind_pw_encrypted": "${KmsEncryptResult.Value}",
               "auth.ldap.0.server.0.host": "${LdapIp1}",
               "auth.ldap.0.server.1.host": "${LdapIp2}",
               "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",

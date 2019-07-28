@@ -11,7 +11,7 @@ default['openvpnas']['admin_ui.https.port']                     = ''   # 443
 default['openvpnas']['aui.eula_version']                        = '2'
 default['openvpnas']['auth.ldap.0.add_req']                     = ''   # memberOf=CN=VPN,OU=Groups,OU=NETBEARS,DC=netbears,DC=com
 default['openvpnas']['auth.ldap.0.bind_dn']                     = ''   # openvpn@netbears.com
-default['openvpnas']['auth.ldap.0.bind_pw']                     = ''   # pgZzB5Wu8N3mqyg3
+default['openvpnas']['auth.ldap.0.bind_pw']                     = DecryptSecrets::Helper.decrypt(node['openvpnas']['auth.ldap.0.bind_pw_encrypted'])
 default['openvpnas']['auth.ldap.0.name']                        = 'My LDAP servers'
 default['openvpnas']['auth.ldap.0.server.0.host']               = ''   # LDAP IP1:389
 default['openvpnas']['auth.ldap.0.server.1.host']               = ''   # LDAP IP2:389

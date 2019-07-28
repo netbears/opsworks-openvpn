@@ -10,4 +10,6 @@ version          '1.0.0'
 depends 'apt'
 depends 'sysctl'
 
+gem 'aws-sdk', '~> 2.7'
+
 supports 'ubuntu'
