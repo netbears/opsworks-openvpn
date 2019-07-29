@@ -42,6 +42,10 @@ Resources:
         Ref: SourceVpcId
       PeerVpcId:
         Ref: TargetVpcId
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-VpcPeeringConnectionn
 
   SourcePrivateRoute:
     Type: AWS::EC2::Route
