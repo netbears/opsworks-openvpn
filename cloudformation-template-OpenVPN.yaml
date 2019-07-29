@@ -55,6 +55,13 @@ Parameters:
     Description: Route53 hosted zone in which to place dns record
     Default: Z37W7PCK0HCQPS
 
+  EnableMfa:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
   #LDAP
   LdapBindDn:
     Type: String
@@ -411,7 +418,8 @@ Resources:
               "vpn.daemon.0.listen.protocol": "${DaemonListenProtocol}",
               "vpn.server.routing.private_network.0": "${PrivateNetworkAccess1}",
               "vpn.server.routing.private_network.1": "${PrivateNetworkAccess2}",
-              "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}"
+              "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}",
+              "enable_mfa": ${EnableMfa}
             }
           }
       Tags:
@@ -573,6 +581,7 @@ Metadata:
       - AdminPassword
       - DnsRecord
       - DnsZone
+      - EnableMfa
     - Label:
         default: LDAP
       Parameters:
@@ -622,6 +631,8 @@ Metadata:
         default: OpenVPN DNS hostname
       DnsZone:
         default: OpenVPN DNS Zone
+      EnableMfa:
+        default: Enable multi-factor authentication
       LdapBindDn:
         default: LDAP username for OpenVPN used for querying
       LdapBindPassword:
