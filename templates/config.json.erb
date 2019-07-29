@@ -38,6 +38,8 @@
   <% if node['openvpnas']['vpn.server.routing.private_network.2'] != "" -%>
   "vpn.server.routing.private_network.2": "<%= node['openvpnas']['vpn.server.routing.private_network.2'] %>",
   <% end -%>
+  "vpn.server.duplicate_cn": "<%= node['openvpnas']['vpn.server.duplicate_cn'] %>",
+  "vpn.server.config_text": "<%= node['openvpnas']['vpn.server.config_text'] %>",
   <% if node['openvpnas']['enable_mfa'] != "true" -%>
   "cs.admin_only": "false",
   "cs.cws_proto_v2": "true",
@@ -50,8 +52,6 @@
   "cs.cws_ui_offer.user_locked": "true",
   "cs.cws_ui_offer.win": "true",
   "vpn.server.google_auth.enable": "true",
-  "xmlrpc.relay_level": "1",
+  "xmlrpc.relay_level": "1"
   <% end -%>
-  "vpn.server.duplicate_cn": "<%= node['openvpnas']['vpn.server.duplicate_cn'] %>",
-  "vpn.server.config_text": "<%= node['openvpnas']['vpn.server.config_text'] %>"
 }
