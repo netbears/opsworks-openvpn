@@ -70,7 +70,7 @@ Parameters:
   LdapBindPassword:
     Type: String
     NoEcho: 'true'
-    Default: 'pgZzB5Wu8N3mqyg3'
+    Default: 'openvpn123!'
 
   LdapHostname:
     Type: String
