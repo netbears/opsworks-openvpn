@@ -1,2 +1,2 @@
-# openvpn Cookbook
+# OpsWorks OpenVPN cookbook
 
