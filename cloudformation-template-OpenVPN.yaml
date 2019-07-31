@@ -72,10 +72,7 @@ Parameters:
     NoEcho: 'true'
     Default: 'pgZzB5Wu8N3mqyg3'
 
-  LdapIp1:
-    Type: String
-
-  LdapIp2:
+  LdapHostname:
     Type: String
 
   LdapUsersBaseDn:
@@ -405,8 +402,7 @@ Resources:
               "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
               "auth.ldap.0.bind_dn": "${LdapBindDn}",
               "auth.ldap.0.bind_pw_encrypted": "${KmsEncryptResult.Value}",
-              "auth.ldap.0.server.0.host": "${LdapIp1}",
-              "auth.ldap.0.server.1.host": "${LdapIp2}",
+              "auth.ldap.0.server.0.host": "${LdapHostname}",
               "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
               "cs.https.port": "${WebPort}",
               "host.name": "${DnsRecord}",
@@ -587,8 +583,7 @@ Metadata:
       Parameters:
       - LdapBindDn
       - LdapBindPassword
-      - LdapIp1
-      - LdapIp2
+      - LdapHostname
       - LdapUsersBaseDn
       - LdapGroupVPNRequirement
       - LdapAdminUsername
@@ -637,10 +632,8 @@ Metadata:
         default: LDAP username for OpenVPN used for querying
       LdapBindPassword:
         default: LDAP password for OpenVPN used for querying
-      LdapIp1:
-        default: LDAP IP 1
-      LdapIp2:
-        default: LDAP IP 2
+      LdapHostname:
+        default: LDAP hostname
       LdapUsersBaseDn:
         default: LDAP base user DN
       LdapGroupVPNRequirement:

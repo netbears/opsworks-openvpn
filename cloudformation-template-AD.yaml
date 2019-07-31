@@ -52,6 +52,15 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Setting takes effect only if CreateVpc is set to "existing" (specify at EXACTLY 2)
 
+  DnsZone:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route53 hosted zone in which to place dns record
+    Default: Z37W7PCK0HCQPS
+
+  DnsRecord:
+    Type: String
+    Default: ldap.aws.netbears.com
+
   #Jumpbox
   Jumpbox:
     Type: String
@@ -307,6 +316,24 @@ Resources:
             - CreateVpc
             - Ref: VPC
             - Ref: VpcId
+
+  Route53Record:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId:
+        Ref: DnsZone
+      Comment: 
+        Fn::Sub: Route53-record-for-LDAP
+      RecordSets:
+      - Name:
+          Ref: DnsRecord
+        Type: A
+        TTL: 300
+        ResourceRecords:
+          Fn::If:
+            - CreateVpc
+            - Fn::GetAtt: AWSDirectoryNewVpc.DnsIpAddresses
+            - Fn::GetAtt: AWSDirectoryExistingVpc.DnsIpAddresses
 
   SsmDocument:
     Condition: DeployJumpbox
@@ -1048,6 +1075,8 @@ Metadata:
       - NewVpc
       - VpcId
       - SubnetIds
+      - DnsZone
+      - DnsRecord
     - Label:
         default: Jumpbox
       Parameters:
