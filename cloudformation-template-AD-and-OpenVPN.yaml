@@ -11,10 +11,6 @@ Parameters:
     Type: String
     Default: '2.7.4'
 
-  OpsWorksStackName:
-    Type: String
-    Default: OpenVPN
-
   InstanceType:
     Type: String
     Default: 'c5.large'
@@ -174,16 +170,19 @@ Parameters:
     Description: If "new", CF will provision all necessary VPC settings and launch the stack in the new VPC
 
   VpcId:
-    Type: AWS::EC2::VPC::Id
+    Type: String
     Description: Setting takes effect only if NewVpc is set to "existing"
+    Default: ignore
 
   SubnetIdsPrivate:
-    Type: List<AWS::EC2::Subnet::Id>
+    Type: CommaDelimitedList
     Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PRIVATE subnets)
+    Default: ignore1,ignore2
 
   SubnetIdsPublic:
-    Type: List<AWS::EC2::Subnet::Id>
+    Type: CommaDelimitedList
     Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PUBLIC subnets)
+    Default: ignore1,ignore2
 
   LdapDnsZone:
     Type: AWS::Route53::HostedZone::Id
@@ -554,7 +553,10 @@ Resources:
     Properties:
       GroupDescription: Allow http to client host
       VpcId:
-        Ref: VPC
+        Fn::If:
+          - CreateVpc
+          - Ref: VPC
+          - Ref: VpcId
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '3389'
@@ -757,7 +759,10 @@ Resources:
       GroupDescription:
         Fn::Sub: ${AWS::StackName}-Sg
       VpcId:
-        Ref: VpcId
+        Fn::If:
+          - CreateVpc
+          - Ref: VPC
+          - Ref: VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort:
@@ -783,7 +788,7 @@ Resources:
     Properties: 
       AgentVersion: LATEST
       Name: 
-        Ref: OpsWorksStackName
+        Ref: AWS::StackName
       ServiceRoleArn: 
         Fn::GetAtt:
           - ServiceRole
@@ -801,9 +806,12 @@ Resources:
         Url:
           Ref: CookbookUrl
       DefaultSubnetId:
-        Ref: SubnetIdHost
+        Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
       VpcId:
-        Ref: VpcId
+        Fn::If:
+          - CreateVpc
+          - Ref: VPC
+          - Ref: VpcId
       UseOpsworksSecurityGroups: true
       DefaultOs: Ubuntu 18.04 LTS
       DefaultRootDeviceType: ebs
@@ -818,7 +826,7 @@ Resources:
               "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
               "auth.ldap.0.bind_dn": "${LdapBindDn}",
               "auth.ldap.0.bind_pw_encrypted": "${KmsEncryptResult.Value}",
-              "auth.ldap.0.server.0.host": "${LdapHostname}",
+              "auth.ldap.0.server.0.host": "${LdapDnsRecord}",
               "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
               "cs.https.port": "${WebPort}",
               "host.name": "${LdapDnsRecord}",
@@ -1637,7 +1645,6 @@ Metadata:
       - Size
       - CookbookUrl
       - Version
-      - OpsWorksStackName
       - InstanceType
       - InstanceRootVolumeSize
       - VpcId
@@ -1651,7 +1658,6 @@ Metadata:
       Parameters:
       - LdapBindDn
       - LdapBindPassword
-      - LdapHostname
       - LdapUsersBaseDn
       - LdapGroupVPNRequirement
       - LdapAdminUsername
@@ -1732,8 +1738,6 @@ Metadata:
         default: Cookbook URL
       Version:
         default: OpenVPN Version
-      OpsWorksStackName:
-        default: OpenVPN OpsWorks stack name
       InstanceType:
         default: OpenVPN Instance Size
       InstanceRootVolumeSize:
@@ -1754,8 +1758,6 @@ Metadata:
         default: LDAP username for OpenVPN used for querying
       LdapBindPassword:
         default: LDAP password for OpenVPN used for querying
-      LdapHostname:
-        default: LDAP hostname
       LdapUsersBaseDn:
         default: LDAP base user DN
       LdapGroupVPNRequirement:

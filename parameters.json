@@ -1,0 +1,222 @@
+[
+  {
+    "ParameterKey": "CookbookUrl",
+    "ParameterValue": "${OpenVPNCookbookUrl}"
+  },
+  {
+    "ParameterKey": "Version",
+    "ParameterValue": "${OpenVPNVersion}"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "${OpenVPNInstanceType}"
+  },
+  {
+    "ParameterKey": "InstanceRootVolumeSize",
+    "ParameterValue": "${OpenVPNInstanceRootVolumeSize}"
+  },
+  {
+    "ParameterKey": "SslLoadBalancer",
+    "ParameterValue": "${OpenVPNSslLoadBalancer}"
+  },
+  {
+    "ParameterKey": "OpenVPNDnsRecord",
+    "ParameterValue": "${OpenVPNDnsRecord}"
+  },
+  {
+    "ParameterKey": "OpenVPNDnsZone",
+    "ParameterValue": "${OpenVPNDnsZone}"
+  },
+  {
+    "ParameterKey": "EnableMfa",
+    "ParameterValue": "${OpenVPNEnableMfa}"
+  },
+  {
+    "ParameterKey": "LdapBindDn",
+    "ParameterValue": "${OpenVPNLdapBindDn}"
+  },
+  {
+    "ParameterKey": "LdapBindPassword",
+    "ParameterValue": "${OpenVPNLdapBindPassword}"
+  },
+  {
+    "ParameterKey": "LdapUsersBaseDn",
+    "ParameterValue": "${OpenVPNLdapUsersBaseDn}"
+  },
+  {
+    "ParameterKey": "LdapGroupVPNRequirement",
+    "ParameterValue": "${OpenVPNLdapGroupVPNRequirement}"
+  },
+  {
+    "ParameterKey": "LdapAdminUsername",
+    "ParameterValue": "${OpenVPNLdapAdminUsername}"
+  },
+  {
+    "ParameterKey": "ClientNetmask",
+    "ParameterValue": "${OpenVPNClientNetmask}"
+  },
+  {
+    "ParameterKey": "ClientNetwork",
+    "ParameterValue": "${OpenVPNClientNetwork}"
+  },
+  {
+    "ParameterKey": "PrivateNetworkAccess1",
+    "ParameterValue": "${OpenVPNPrivateNetworkAccess1}"
+  },
+  {
+    "ParameterKey": "PrivateNetworkAccess2",
+    "ParameterValue": "${OpenVPNPrivateNetworkAccess2}"
+  },
+  {
+    "ParameterKey": "PrivateNetworkAccess3",
+    "ParameterValue": "${OpenVPNPrivateNetworkAccess3}"
+  },
+  {
+    "ParameterKey": "WebPort",
+    "ParameterValue": "${OpenVPNWebPort}"
+  },
+  {
+    "ParameterKey": "ClientsTalkEachOther",
+    "ParameterValue": "${OpenVPNClientsTalkEachOther}"
+  },
+  {
+    "ParameterKey": "RouteInternetTraffic",
+    "ParameterValue": "${OpenVPNRouteInternetTraffic}"
+  },
+  {
+    "ParameterKey": "DaemonListenPort",
+    "ParameterValue": "${OpenVPNDaemonListenPort}"
+  },
+  {
+    "ParameterKey": "DaemonListenProtocol",
+    "ParameterValue": "${OpenVPNDaemonListenProtocol}"
+  },
+  {
+    "ParameterKey": "Size",
+    "ParameterValue": "${SimpleADSize}"
+  },
+  {
+    "ParameterKey": "EnableSso",
+    "ParameterValue": "${SimpleADEnableSso}"
+  },
+  {
+    "ParameterKey": "Name",
+    "ParameterValue": "${SimpleADName}"
+  },
+  {
+    "ParameterKey": "ShortName",
+    "ParameterValue": "${SimpleADShortName}"
+  },
+  {
+    "ParameterKey": "Password",
+    "ParameterValue": "${SimpleADPassword}"
+  },
+  {
+    "ParameterKey": "NewVpc",
+    "ParameterValue": "${SimpleADNewVpc}"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "${SimpleADVpcId}"
+  },
+  {
+    "ParameterKey": "SubnetIdsPrivate",
+    "ParameterValue": "${SubnetIdsPrivate}"
+  },
+  {
+    "ParameterKey": "SubnetIdsPublic",
+    "ParameterValue": "${SubnetIdsPublic}"
+  },
+  {
+    "ParameterKey": "LdapDnsZone",
+    "ParameterValue": "${SimpleADDnsZone}"
+  },
+  {
+    "ParameterKey": "LdapDnsRecord",
+    "ParameterValue": "${SimpleADDnsRecord}"
+  },
+  {
+    "ParameterKey": "Jumpbox",
+    "ParameterValue": "${SimpleADJumpbox}"
+  },
+  {
+    "ParameterKey": "JumpboxAmi",
+    "ParameterValue": "${SimpleADJumpboxAmi}"
+  },
+  {
+    "ParameterKey": "JumpboxKeyPair",
+    "ParameterValue": "${SimpleADJumpboxKeyPair}"
+  },
+  {
+    "ParameterKey": "JumpboxType",
+    "ParameterValue": "${SimpleADJumpboxType}"
+  },
+  {
+    "ParameterKey": "JumpboxInstanceType",
+    "ParameterValue": "${SimpleADJumpboxInstanceType}"
+  },
+  {
+    "ParameterKey": "VPCSubnetCidrBlock",
+    "ParameterValue": "${VPCSubnetCidrBlock}"
+  },
+  {
+    "ParameterKey": "AvailabilityZone1",
+    "ParameterValue": "${AvailabilityZone1}"
+  },
+  {
+    "ParameterKey": "AvailabilityZone2",
+    "ParameterValue": "${AvailabilityZone2}"
+  },
+  {
+    "ParameterKey": "AvailabilityZone3",
+    "ParameterValue": "${AvailabilityZone3}"
+  },
+  {
+    "ParameterKey": "PublicSubnetCidrBlock1",
+    "ParameterValue": "${PublicSubnetCidrBlock1}"
+  },
+  {
+    "ParameterKey": "PublicSubnetCidrBlock2",
+    "ParameterValue": "${PublicSubnetCidrBlock2}"
+  },
+  {
+    "ParameterKey": "PublicSubnetCidrBlock3",
+    "ParameterValue": "${PublicSubnetCidrBlock3}"
+  },
+  {
+    "ParameterKey": "PrivateSubnetCidrBlock1",
+    "ParameterValue": "${PrivateSubnetCidrBlock1}"
+  },
+  {
+    "ParameterKey": "PrivateSubnetCidrBlock2",
+    "ParameterValue": "${PrivateSubnetCidrBlock2}"
+  },
+  {
+    "ParameterKey": "PrivateSubnetCidrBlock3",
+    "ParameterValue": "${PrivateSubnetCidrBlock3}"
+  },
+  {
+    "ParameterKey": "RemoteCidrForSecurityGroup",
+    "ParameterValue": "${RemoteCidrForSecurityGroup}"
+  },
+  {
+    "ParameterKey": "RemoteCidrForPublicAcl",
+    "ParameterValue": "${RemoteCidrForPublicAcl}"
+  },
+  {
+    "ParameterKey": "AllowAllInboundPublicRuleNumber",
+    "ParameterValue": "${AllowAllInboundPublicRuleNumber}"
+  },
+  {
+    "ParameterKey": "AllowAllInboundPrivateRuleNumber",
+    "ParameterValue": "${AllowAllInboundPrivateRuleNumber}"
+  },
+  {
+    "ParameterKey": "AllowAllOutboundPublicRuleNumber",
+    "ParameterValue": "${AllowAllOutboundPublicRuleNumber}"
+  },
+  {
+    "ParameterKey": "AllowAllOutboundPrivateRuleNumber",
+    "ParameterValue": "${AllowAllOutboundPrivateRuleNumber}"
+  }
+]
