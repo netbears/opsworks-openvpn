@@ -1,6 +1,135 @@
-Description: Launch ActiveDirectory SimpleAD stack within its own VPC or an existing VPC
+Description: Launch OpenVPN backed up by ActiveDirectory SimpleAD stack within its own VPC or an existing VPC
 
 Parameters:
+
+  #OpenVPN
+  CookbookUrl:
+    Type: String
+    Default: 'https://github.com/netbears/opsworks-openvpn/releases/download/v1.0.0/cookbooks-v1.0.0.tar.gz'
+
+  Version:
+    Type: String
+    Default: '2.7.4'
+
+  OpsWorksStackName:
+    Type: String
+    Default: OpenVPN
+
+  InstanceType:
+    Type: String
+    Default: 'c5.large'
+    AllowedValues:
+    - c5.large
+    - c5.xlarge
+    - c5.2xlarge
+    - c5.4xlarge
+
+  InstanceRootVolumeSize:
+    Type: String
+    Default: '50'
+    Description: Size in GB of the root volume
+
+  SslLoadBalancer:
+    Type: String
+    Description: SSL ARN from Certificate Manager
+    Default: arn:aws:acm:us-east-1:359360911388:certificate/0fbec0ab-69ea-46ab-bb0f-aecd359b4621
+
+  OpenVPNDnsRecord:
+    Type: String
+    Default: vpn.aws.netbears.com
+
+  OpenVPNDnsZone:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route53 hosted zone in which to place dns record
+    Default: Z37W7PCK0HCQPS
+
+  EnableMfa:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  #LDAP
+  LdapBindDn:
+    Type: String
+    Default: openvpn@netbears.com
+    Description: User will have to be created in AD after stack creation
+
+  LdapBindPassword:
+    Type: String
+    NoEcho: 'true'
+    Default: 'openvpn123!'
+    Description: Password for bind user needs to be set up to this one after stack creation
+
+  LdapUsersBaseDn:
+    Type: String
+    Default: OU=Users,OU=NETBEARS,DC=netbears,DC=com
+    Description: Make sure the path exists in AD after stack creation
+
+  LdapGroupVPNRequirement:
+    Type: String
+    Default: memberOf=CN=VPN,OU=Groups,OU=NETBEARS,DC=netbears,DC=com
+    Description: Make sure the group exists in AD after stack creation
+
+  LdapAdminUsername:
+    Type: String
+    Default: mariusmitrofan
+    Description: Make sure the user exists in AD after stack creation
+
+  #Network
+  ClientNetmask:
+    Type: String
+    Default: '20'
+
+  ClientNetwork:
+    Type: String
+    Default: '172.20.112.0'
+
+  PrivateNetworkAccess1:
+    Type: String
+    Description: Set the VPC CIDR that you want to provide access to. Leave empty if none
+    Default: "172.20.0.0/16"
+
+  PrivateNetworkAccess2:
+    Type: String
+    Description: Set the VPC CIDR that you want to provide access to. Leave empty if none
+    Default: "172.17.0.0/16"
+
+  PrivateNetworkAccess3:
+    Type: String
+    Description: Set the VPC CIDR that you want to provide access to. Leave empty if none
+    Default: "172.23.0.0/16"
+
+  WebPort:
+    Type: String
+    Default: '443'
+
+  ClientsTalkEachOther:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  RouteInternetTraffic:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to route Internet traffic through OpenVPN or not
+
+  DaemonListenPort:
+    Type: String
+    Default: '80'
+
+  DaemonListenProtocol:
+    Type: String
+    Default: 'tcp'
+    AllowedValues:
+      - 'tcp'
+      - 'udp'
 
   #ActiveDirectory
   Size:
@@ -48,16 +177,20 @@ Parameters:
     Type: AWS::EC2::VPC::Id
     Description: Setting takes effect only if NewVpc is set to "existing"
 
-  SubnetIds:
+  SubnetIdsPrivate:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Setting takes effect only if CreateVpc is set to "existing" (specify at EXACTLY 2)
+    Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PRIVATE subnets)
 
-  DnsZone:
+  SubnetIdsPublic:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PUBLIC subnets)
+
+  LdapDnsZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 hosted zone in which to place dns record
     Default: Z37W7PCK0HCQPS
 
-  DnsRecord:
+  LdapDnsRecord:
     Type: String
     Default: ldap.aws.netbears.com
 
@@ -92,52 +225,11 @@ Parameters:
     Type: String
     Default: t2.medium
     AllowedValues:
-    - t1.micro
     - t2.micro
     - t2.small
     - t2.medium
-    - m1.small
-    - m1.medium
-    - m1.large
-    - m1.xlarge
-    - m2.xlarge
-    - m2.2xlarge
-    - m2.4xlarge
-    - m3.medium
-    - m3.large
-    - m3.xlarge
-    - m3.2xlarge
-    - c1.medium
-    - c1.xlarge
-    - c3.large
-    - c3.xlarge
-    - c3.2xlarge
-    - c3.4xlarge
-    - c3.8xlarge
     - c4.large
     - c4.xlarge
-    - c4.2xlarge
-    - c4.4xlarge
-    - c4.8xlarge
-    - g2.2xlarge
-    - r3.large
-    - r3.xlarge
-    - r3.2xlarge
-    - r3.4xlarge
-    - r3.8xlarge
-    - i2.xlarge
-    - i2.2xlarge
-    - i2.4xlarge
-    - i2.8xlarge
-    - d2.xlarge
-    - d2.2xlarge
-    - d2.4xlarge
-    - d2.8xlarge
-    - hi1.4xlarge
-    - hs1.8xlarge
-    - cr1.8xlarge
-    - cc2.8xlarge
-    - cg1.4xlarge
     ConstraintDescription: Must be a valid EC2 instance type.
 
   # Subnets
@@ -259,6 +351,11 @@ Conditions:
       - Ref: JumpboxType
       - public-ip
 
+  IsTcpDaemon:
+    Fn::Equals:
+      - Ref: DaemonListenProtocol
+      - tcp
+
 Resources:
   AWSDirectoryExistingVpc:
     Condition: DoNotCreateVpc
@@ -281,7 +378,7 @@ Resources:
             - 
               - Ref: PrivateSubnet1
               - Ref: PrivateSubnet2
-            - Ref: SubnetIds
+            - Ref: SubnetIdsPrivate
         VpcId:
           Fn::If:
             - CreateVpc
@@ -310,7 +407,7 @@ Resources:
             - 
               - Ref: PrivateSubnet1
               - Ref: PrivateSubnet2
-            - Ref: SubnetIds
+            - Ref: SubnetIdsPrivate
         VpcId:
           Fn::If:
             - CreateVpc
@@ -321,12 +418,12 @@ Resources:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneId:
-        Ref: DnsZone
+        Ref: LdapDnsZone
       Comment: 
         Fn::Sub: Route53-record-for-LDAP
       RecordSets:
       - Name:
-          Ref: DnsRecord
+          Ref: LdapDnsRecord
         Type: A
         TTL: 300
         ResourceRecords:
@@ -425,7 +522,7 @@ Resources:
               - PublicJumpbox
               - Ref: PublicSubnet1
               - Ref: PrivateSubnet1
-            - Fn::Select: [ 0, Ref: SubnetIds ]
+            - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
 
   InstanceRole:
     Condition: DeployJumpbox
@@ -463,6 +560,412 @@ Resources:
         FromPort: '3389'
         ToPort: '3389'
         CidrIp: 0.0.0.0/0
+
+  KmsEncryptRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [lambda.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Policies:
+      - PolicyName:
+          Fn::Sub: ${AWS::StackName}-KMS
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Encrypt*
+            - kms:Get*
+            - kms:List*
+            - kms:Describe*
+            Resource: '*'
+      - PolicyName:
+          Fn::Sub: ${AWS::StackName}-CloudWatch
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            - cloudwatch:*
+            Resource: '*'
+
+  KmsEncryptFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Runtime: python3.7
+      Role:
+        Fn::GetAtt: KmsEncryptRole.Arn
+      Code:
+        ZipFile:
+          Fn::Sub: |
+            import boto3
+            import cfnresponse
+            import base64
+            def lambda_handler(event, context):
+              responseValue={}
+              kms = boto3.client('kms',region_name="${AWS::Region}")
+              secret = kms.encrypt(KeyId="${LdapPasswordKey.Arn}",Plaintext="${LdapBindPassword}")
+              blob = secret["CiphertextBlob"]
+              responseValue["Value"] = str(base64.b64encode(blob))[2:-1]
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, responseValue)
+              return True
+
+  KmsEncryptResult:
+    Type: Custom::KmsEncryptLdapBindPassword
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: KmsEncryptFunction.Arn
+
+  LdapPasswordKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: kms:*
+            Resource: "*"
+            Principal:
+              AWS:
+                - Fn::Sub: arn:aws:iam::${AWS::AccountId}:root
+          - Effect: Allow
+            Action: kms:Encrypt
+            Resource: "*"
+            Principal:
+              AWS:
+                - Fn::GetAtt: KmsEncryptRole.Arn
+          - Effect: Allow
+            Action: kms:Decrypt
+            Resource: "*"
+            Principal:
+              AWS:
+                - Fn::GetAtt: InstanceRole.Arn
+
+  LdapPasswordAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/OpenVPN
+      TargetKeyId:
+        Ref: LdapPasswordKey
+
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'opsworks.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-OpsWorksDefaultPolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:*'
+                  - 'iam:PassRole'
+                  - 'cloudwatch:GetMetricStatistics'
+                  - 'cloudwatch:DescribeAlarms'
+                  - 'elasticloadbalancing:*'
+                  - 'ecs:*'
+                  - 'rds:*'
+                Resource: '*'
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-ec2
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:Get*'
+                  - 'ec2:List*'
+                  - 'ec2:Describe*'
+                Resource:
+                  - '*'
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-s3
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource:
+                  - '*'
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-CloudWatchLogs
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudwatch:*'
+                  - 'logs:*'
+                Resource:
+                  - '*'
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - Ref: InstanceRole
+
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+        Fn::Sub: ${AWS::StackName}-Sg
+      VpcId:
+        Fn::If:
+          - CreateVpc
+          - Ref: VPC
+          - Ref: VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+        Fn::Sub: ${AWS::StackName}-Sg
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort:
+            Ref: WebPort
+          ToPort:
+            Ref: WebPort
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort:
+            Ref: DaemonListenPort
+          ToPort:
+            Ref: DaemonListenPort
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort:
+            Ref: DaemonListenPort
+          ToPort:
+            Ref: DaemonListenPort
+          CidrIp: 0.0.0.0/0
+
+  OpsWorksStack: 
+    Type: AWS::OpsWorks::Stack
+    Properties: 
+      AgentVersion: LATEST
+      Name: 
+        Ref: OpsWorksStackName
+      ServiceRoleArn: 
+        Fn::GetAtt:
+          - ServiceRole
+          - Arn
+      DefaultInstanceProfileArn: 
+        Fn::GetAtt:
+          - InstanceProfile
+          - Arn
+      ConfigurationManager:
+        Name: Chef
+        Version: '12'
+      UseCustomCookbooks: true
+      CustomCookbooksSource:
+        Type: archive
+        Url:
+          Ref: CookbookUrl
+      DefaultSubnetId:
+        Ref: SubnetIdHost
+      VpcId:
+        Ref: VpcId
+      UseOpsworksSecurityGroups: true
+      DefaultOs: Ubuntu 18.04 LTS
+      DefaultRootDeviceType: ebs
+      CustomJson:
+        Fn::Sub: |
+          {
+            "openvpnas": {
+              "version": "${Version}",
+              "ubuntu_version": "Ubuntu18",
+              "admin_username": "${LdapAdminUsername}",
+              "admin_ui.https.port": "${WebPort}",
+              "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
+              "auth.ldap.0.bind_dn": "${LdapBindDn}",
+              "auth.ldap.0.bind_pw_encrypted": "${KmsEncryptResult.Value}",
+              "auth.ldap.0.server.0.host": "${LdapHostname}",
+              "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
+              "cs.https.port": "${WebPort}",
+              "host.name": "${LdapDnsRecord}",
+              "vpn.client.routing.inter_client": "${ClientsTalkEachOther}",
+              "vpn.client.routing.reroute_gw": "${RouteInternetTraffic}",
+              "vpn.daemon.0.client.netmask_bits": "${ClientNetmask}",
+              "vpn.daemon.0.client.network": "${ClientNetwork}",
+              "vpn.daemon.0.listen.port": "${DaemonListenPort}",
+              "vpn.daemon.0.listen.protocol": "${DaemonListenProtocol}",
+              "vpn.server.routing.private_network.0": "${PrivateNetworkAccess1}",
+              "vpn.server.routing.private_network.1": "${PrivateNetworkAccess2}",
+              "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}",
+              "enable_mfa": ${EnableMfa}
+            }
+          }
+      Tags:
+        - Key: Application
+          Value: OpenVPN
+        - Key: MaintainerName
+          Value: Marius Mitrofan
+        - Key: MaintainerTeam
+          Value: NETBEARS
+        - Key: MaintainerEmail
+          Value: support@netbears.com
+
+  Elb:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    DependsOn: Layer
+    Properties:
+      HealthCheck:
+        Interval: 30
+        Target: TCP:22
+        Timeout: 5
+        UnhealthyThreshold: 5
+        HealthyThreshold: 5
+      Listeners:
+        - Fn::If:
+          - IsTcpDaemon
+          - InstancePort:
+              Ref: DaemonListenPort
+            LoadBalancerPort:
+              Ref: DaemonListenPort
+            Protocol: TCP
+            InstanceProtocol: TCP
+            SSLCertificateId:
+              Ref: SslLoadBalancer
+          - Ref: AWS::NoValue
+        - InstancePort:
+            Ref: WebPort
+          LoadBalancerPort:
+            Ref: WebPort
+          Protocol: HTTPS
+          InstanceProtocol: HTTPS
+          PolicyNames:
+            - Fn::Sub: ${AWS::StackName}
+          SSLCertificateId:
+            Ref: SslLoadBalancer
+      Scheme: internet-facing
+      SecurityGroups:
+        - Ref: AlbSecurityGroup
+      Subnets:
+        Ref: SubnetIdLoadBalancer
+        Fn::If:
+          - CreateVpc
+          - 
+            - Ref: PublicSubnet1
+            - Ref: PublicSubnet2
+          - Ref: SubnetIdsPublic
+      ConnectionDrainingPolicy:
+        Enabled: 'true'
+        Timeout: '300'
+      LBCookieStickinessPolicy:
+        - CookieExpirationPeriod: 600
+          PolicyName:
+            Ref: AWS::StackName
+
+  Layer:
+    Type: AWS::OpsWorks::Layer
+    Properties:
+      Name: OpenVPN
+      Shortname: openvpn-
+      Type: custom
+      EnableAutoHealing: 'false'
+      AutoAssignElasticIps: 'false'
+      AutoAssignPublicIps: 'false'
+      StackId:
+        Ref: OpsWorksStack
+      CustomRecipes:
+        Setup:
+          - 'openvpn_stack::setup'
+      UseEbsOptimizedInstances: True
+      CustomSecurityGroupIds:
+        - Fn::GetAtt: Ec2SecurityGroup.GroupId
+
+  ElbLayer:
+    DependsOn: Elb
+    Type: AWS::OpsWorks::ElasticLoadBalancerAttachment
+    Properties: 
+      ElasticLoadBalancerName: 
+        Ref: Elb
+      LayerId: 
+        Ref: Layer
+
+  InstanceOpsWorks: 
+    Type: AWS::OpsWorks::Instance
+    DependsOn: Elb
+    Properties: 
+      StackId: 
+        Ref: OpsWorksStack
+      LayerIds: 
+        - Ref: Layer
+      InstanceType:
+        Ref: InstanceType
+      RootDeviceType: ebs
+      SubnetId:
+        Fn::If:
+          - CreateVpc
+          - PrivateSubnet1
+          - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
+      Hostname: openvpn-1
+      BlockDeviceMappings:
+        - DeviceName: ROOT_DEVICE
+          Ebs:
+            VolumeType: gp2
+            VolumeSize:
+              Ref: InstanceRootVolumeSize
+
+  Route53Record:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId:
+        Ref: OpenVPNDnsZone
+      Comment: 
+        Fn::Sub: Route53-record-for-OpenVPN
+      RecordSets:
+      - Name:
+          Ref: OpenVPNDnsRecord
+        Type: A
+        AliasTarget:
+          HostedZoneId: 
+            Fn::GetAtt:
+              - Elb
+              - CanonicalHostedZoneNameID
+          DNSName: 
+            Fn::GetAtt:
+              - Elb
+              - DNSName
 
   VPC:
     Condition: CreateVpc
@@ -980,6 +1483,20 @@ Resources:
         CidrIp: 0.0.0.0/0
 
 Outputs:
+  AdminUrlOpenVPN:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-AdminUrlOpenVPN"
+    Value:
+      Fn::Sub: "https://${OpenVPNDnsRecord}:${WebPort}/admin"
+
+  ClientUrlOpenVPN:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ClientUrlOpenVPN"
+    Value:
+      Fn::Sub: "https://${OpenVPNDnsRecord}:${WebPort}"
+
   JumpboxIp:
     Condition: DeployJumpbox
     Export:
@@ -1074,9 +1591,10 @@ Metadata:
       - Password
       - NewVpc
       - VpcId
-      - SubnetIds
-      - DnsZone
-      - DnsRecord
+      - SubnetIdsPrivate
+      - SubnetIdsPublic
+      - LdapDnsZone
+      - LdapDnsRecord
     - Label:
         default: Jumpbox
       Parameters:
@@ -1113,6 +1631,44 @@ Metadata:
       Parameters:
       - AllowAllInboundPrivateRuleNumber
       - AllowAllOutboundPrivateRuleNumber
+    - Label:
+        default: OpenVPN
+      Parameters:
+      - Size
+      - CookbookUrl
+      - Version
+      - OpsWorksStackName
+      - InstanceType
+      - InstanceRootVolumeSize
+      - VpcId
+      - SslLoadBalancer
+      - AdminPassword
+      - OpenVPNDnsRecord
+      - OpenVPNDnsZone
+      - EnableMfa
+    - Label:
+        default: LDAP
+      Parameters:
+      - LdapBindDn
+      - LdapBindPassword
+      - LdapHostname
+      - LdapUsersBaseDn
+      - LdapGroupVPNRequirement
+      - LdapAdminUsername
+    - Label:
+        default: Network
+      Parameters:
+      - ClientNetmask
+      - ClientNetwork
+      - PrivateNetworkAccess
+      - RouteInternetTraffic
+      - ClientsTalkEachOther
+      - DaemonListenProtocol
+      - DaemonListenPort
+      - PrivateNetworkAccess1
+      - PrivateNetworkAccess2
+      - PrivateNetworkAccess3
+      - WebPort
     ParameterLabels:
       RemoteCidrForSecurityGroup:
         default: Network CIDR for SG
@@ -1172,3 +1728,53 @@ Metadata:
         default: Active Directory - If Existing, which VPC
       SubnetIds:
         default: Active Directory - If existing, which Subnets
+      CookbookUrl:
+        default: Cookbook URL
+      Version:
+        default: OpenVPN Version
+      OpsWorksStackName:
+        default: OpenVPN OpsWorks stack name
+      InstanceType:
+        default: OpenVPN Instance Size
+      InstanceRootVolumeSize:
+        default: OpenVPN Root Volume Size
+      VpcId:
+        default: OpenVPN VPC
+      SslLoadBalancer:
+        default: SSL Certificate for Load Balancer
+      AdminPassword:
+        default: OpenVPN initial admin password
+      OpenVPNDnsRecord:
+        default: OpenVPN DNS hostname
+      OpenVPNDnsZone:
+        default: OpenVPN DNS Zone
+      EnableMfa:
+        default: Enable multi-factor authentication
+      LdapBindDn:
+        default: LDAP username for OpenVPN used for querying
+      LdapBindPassword:
+        default: LDAP password for OpenVPN used for querying
+      LdapHostname:
+        default: LDAP hostname
+      LdapUsersBaseDn:
+        default: LDAP base user DN
+      LdapGroupVPNRequirement:
+        default: LDAP group requirement
+      LdapAdminUsername:
+        default: LDAP admin username
+      ClientNetmask:
+        default: Client network mask
+      ClientNetwork:
+        default: Client network ip
+      PrivateNetworkAccess1:
+        default: Client network AWS access ip cidr 1
+      PrivateNetworkAccess2:
+        default: Client network AWS access ip cidr 2
+      PrivateNetworkAccess3:
+        default: Client network AWS access ip cidr 3
+      RouteInternetTraffic:
+        default: Client network traffic routed through OpenVPN
+      WebPort:
+        default: Port to use for HTTPS web interface
+      ClientsTalkEachOther:
+        default: Should the clients talk to each other?
