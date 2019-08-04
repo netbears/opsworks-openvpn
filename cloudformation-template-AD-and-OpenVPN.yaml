@@ -806,7 +806,10 @@ Resources:
         Url:
           Ref: CookbookUrl
       DefaultSubnetId:
-        Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
+        Fn::If:
+          - CreateVpc
+          - Ref: PrivateSubnet1
+          - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
       VpcId:
         Fn::If:
           - CreateVpc
@@ -888,7 +891,6 @@ Resources:
       SecurityGroups:
         - Ref: AlbSecurityGroup
       Subnets:
-        Ref: SubnetIdLoadBalancer
         Fn::If:
           - CreateVpc
           - 
