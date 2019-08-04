@@ -1,4 +1,4 @@
-Description: Launch OpenVPN stack in existing VPC
+Description: Launch OpenVPN backed up by ActiveDirectory SimpleAD stack within its own VPC or an existing VPC
 
 Parameters:
 
@@ -10,10 +10,6 @@ Parameters:
   Version:
     Type: String
     Default: '2.7.4'
-
-  OpsWorksStackName:
-    Type: String
-    Default: OpenVPN
 
   InstanceType:
     Type: String
@@ -29,31 +25,16 @@ Parameters:
     Default: '50'
     Description: Size in GB of the root volume
 
-  VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: VPC in which AD is deployed
-
-  SubnetIdHost:
-    Type: AWS::EC2::Subnet::Id
-    Description: SubnetID (PRIVATE) in which AD is deployed
-
-  SubnetIdLoadBalancer:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: List of SubnetIDs (PUBLIC) in which AD is deployed. Mention at least 2.
-
   SslLoadBalancer:
     Type: String
     Description: SSL ARN from Certificate Manager
-    Default: arn:aws:acm:us-east-1:359360911388:certificate/0fbec0ab-69ea-46ab-bb0f-aecd359b4621
 
-  DnsRecord:
+  OpenVPNDnsRecord:
     Type: String
-    Default: vpn.aws.netbears.com
 
-  DnsZone:
+  OpenVPNDnsZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 hosted zone in which to place dns record
-    Default: Z37W7PCK0HCQPS
 
   EnableMfa:
     Type: String
@@ -65,27 +46,24 @@ Parameters:
   #LDAP
   LdapBindDn:
     Type: String
-    Default: openvpn@netbears.com
+    Description: User will have to be created in AD after stack creation
 
   LdapBindPassword:
     Type: String
     NoEcho: 'true'
-    Default: 'openvpn123!'
-
-  LdapHostname:
-    Type: String
+    Description: Password for bind user needs to be set up to this one after stack creation
 
   LdapUsersBaseDn:
     Type: String
-    Default: OU=Users,OU=NETBEARS,DC=netbears,DC=com
+    Description: Make sure the path exists in AD after stack creation
 
   LdapGroupVPNRequirement:
     Type: String
-    Default: memberOf=CN=VPN,OU=Groups,OU=NETBEARS,DC=netbears,DC=com
+    Description: Make sure the group exists in AD after stack creation
 
   LdapAdminUsername:
     Type: String
-    Default: mariusmitrofan
+    Description: Make sure the user exists in AD after stack creation
 
   #Network
   ClientNetmask:
@@ -141,13 +119,303 @@ Parameters:
       - 'tcp'
       - 'udp'
 
+  #ActiveDirectory
+  Size:
+    Type: String
+    Default: 'Small'
+    AllowedValues:
+      - 'Small'
+      - 'Large'
+    Description: Small - Supports up to 500 users (~ 40 USD/month). Large - Supports up to 5,000 users (~ 150 USD/month).
+
+  EnableSso:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'false'
+      - 'true'
+    Description: Single sign-on allows users in your directory to access certain AWS services from a computer joined to the directory without having to enter their credentials separately
+
+  Name:
+    Type: String
+    Description: The fully qualified domain name for the AWS Managed Microsoft AD directory, such as corp.example.com. This name will resolve inside your VPC only. It does not need to be publicly resolvable.
+
+  ShortName:
+    Type: String
+    Description: The NetBIOS name for your domain, such as CORP. For example, CORP for the directory DNS corp.example.com.
+
+  Password:
+    Type: String
+    NoEcho: 'true'
+    Description: The password for the default administrative user named Admin. If you need to change the password for the administrator account, see the ResetUserPassword API call in the AWS Directory Service API Reference.
+    AllowedPattern: (?=^.{8,64}$)((?=.*\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[^A-Za-z0-9\s])(?=.*[a-z])|(?=.*[^A-Za-z0-9\s])(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9\s]))^.*
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Setting takes effect only if NewVpc is set to "existing"
+    Default: ignore
+
+  SubnetIdsPrivate:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PRIVATE subnets)
+    Default: ignore1,ignore2
+
+  SubnetIdsPublic:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PUBLIC subnets)
+    Default: ignore1,ignore2
+
+  LdapDnsZone:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route53 hosted zone in which to place dns record
+
+  LdapDnsRecord:
+    Type: String
+
+  #Jumpbox
+  Jumpbox:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to deploy a Windows Server Jumpbox attached to the domain
+
+  JumpboxAmi:
+    Type: AWS::EC2::Image::Id
+    Description: Windows 2016 or 2019 Base AMI available in your region (default value is current Windows 2019 Base AMI in us-east-1 at time of writing)
+    Default: ami-04ca2d0801450d495
+
+  JumpboxKeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: KeyPair for EC2 Instance
+
+  JumpboxType:
+    Type: String
+    Default: 'public-ip'
+    AllowedValues:
+      - public-ip
+      - private-ip
+    Description: Whether to deploy the jumpbox with public ip or not
+
+  JumpboxInstanceType:
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+    - t2.micro
+    - t2.small
+    - t2.medium
+    - c4.large
+    - c4.xlarge
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  # Logging
+  ElasticsearchPort:
+    Type: String
+    Default: '9200'
+
+  ElasticsearchHost:
+    Type: String
+
+  KibanaPort:
+    Type: String
+    Default: '5601'
+
+  KibanaHost:
+    Type: String
+
+  LoggingToElasticsearchEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to deploy Filebeat and connect it to ElasticSearch
+
 Conditions:
+  DeployJumpbox:
+    Fn::Equals:
+      - Ref: Jumpbox
+      - 'true'
+
+  PublicJumpbox:
+    Fn::Equals:
+      - Ref: JumpboxType
+      - public-ip
+
   IsTcpDaemon:
     Fn::Equals:
       - Ref: DaemonListenProtocol
       - tcp
 
 Resources:
+  AWSDirectory:
+    Type: AWS::DirectoryService::SimpleAD
+    Properties:
+      EnableSso:
+        Ref: EnableSso
+      Name:
+        Ref: Name
+      Password: 
+        Ref: Password
+      ShortName: 
+        Ref: ShortName
+      Size:
+        Ref: Size
+      VpcSettings:
+        SubnetIds:
+          - Fn::Select:
+              - 0
+              - Ref: SubnetIdsPrivate
+          - Fn::Select:
+              - 1
+              - Ref: SubnetIdsPrivate
+        VpcId:
+          Ref: VpcId
+
+  Route53RecordLdap:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId:
+        Ref: LdapDnsZone
+      Comment: 
+        Fn::Sub: Route53-record-for-LDAP
+      RecordSets:
+      - Name:
+          Ref: LdapDnsRecord
+        Type: A
+        TTL: 300
+        ResourceRecords:
+          Fn::GetAtt: AWSDirectory.DnsIpAddresses
+
+  SsmDocument:
+    Condition: DeployJumpbox
+    DependsOn: AWSDirectory
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '1.2'
+        description: Join instances to an AWS Directory Service domain.
+        parameters:
+          directoryId:
+            type: String
+            description: "(Required) The ID of the AWS Directory Service directory."
+          directoryName:
+            type: String
+            description: "(Required) The name of the directory; for example, test.example.com"
+          dnsIpAddresses:
+            type: StringList
+            default: []
+            description: "(Optional) The IP addresses of the DNS servers in the directory.
+              Required when DHCP is not configured. Learn more at http://docs.aws.amazon.com/directoryservice/latest/simple-ad/join_get_dns_addresses.html"
+            allowedPattern: "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+        runtimeConfig:
+          aws:domainJoin:
+            properties:
+              directoryId: "{{ directoryId }}"
+              directoryName: "{{ directoryName }}"
+              dnsIpAddresses: "{{ dnsIpAddresses }}"
+
+  JumpboxEc2:
+    DependsOn: AWSDirectory
+    Condition: DeployJumpbox
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile:
+        Ref: InstanceProfileJumpbox
+      SsmAssociations: 
+        - 
+          DocumentName: 
+            Ref: SsmDocument
+          AssociationParameters: 
+            - 
+              Key: "directoryId"
+              Value: 
+                - 
+                  Ref: AWSDirectory
+            - 
+              Key: "directoryName"
+              Value: 
+                - 
+                  Ref: Name
+            - 
+              Key: "dnsIpAddresses"
+              Value: 
+                Fn::GetAtt: 
+                  - "AWSDirectory"
+                  - "DnsIpAddresses"
+      KeyName:
+        Ref: JumpboxKeyPair
+      ImageId:
+        Ref: JumpboxAmi
+      InstanceType:
+        Ref: JumpboxInstanceType
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: "${AWS::StackName}-Jumpbox"
+      NetworkInterfaces:
+      - AssociatePublicIpAddress:
+          Fn::If:
+            - PublicJumpbox
+            - 'true'
+            - 'false'
+        DeviceIndex: '0'
+        GroupSet:
+        - Ref: InstanceSecurityGroup
+        SubnetId:
+          Fn::If:
+            - PublicJumpbox
+            - Fn::Select: [ 0, Ref: SubnetIdsPublic ]
+            - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
+
+  InstanceRoleJumpbox:
+    Condition: DeployJumpbox
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-ssm-create-association
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:CreateAssociation'
+                Resource:
+                  - '*'
+
+  InstanceProfileJumpbox:
+    Condition: DeployJumpbox
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - Ref: InstanceRoleJumpbox
+
+  InstanceSecurityGroup:
+    Condition: DeployJumpbox
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '3389'
+        ToPort: '3389'
+        CidrIp: 0.0.0.0/0
+
   KmsEncryptRole:
     Type: AWS::IAM::Role
     Properties:
@@ -230,7 +498,7 @@ Resources:
             Resource: "*"
             Principal:
               AWS:
-                - Fn::GetAtt: InstanceRole.Arn
+                - Fn::GetAtt: InstanceRoleOpenVPN.Arn
 
   LdapPasswordAlias:
     Type: AWS::KMS::Alias
@@ -267,7 +535,7 @@ Resources:
                   - 'rds:*'
                 Resource: '*'
 
-  InstanceRole:
+  InstanceRoleOpenVPN:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -311,12 +579,12 @@ Resources:
                 Resource:
                   - '*'
 
-  InstanceProfile:
+  InstanceProfileOpenVPN:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-        - Ref: InstanceRole
+        - Ref: InstanceRoleOpenVPN
 
   Ec2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -367,14 +635,14 @@ Resources:
     Properties: 
       AgentVersion: LATEST
       Name: 
-        Ref: OpsWorksStackName
+        Ref: AWS::StackName
       ServiceRoleArn: 
         Fn::GetAtt:
           - ServiceRole
           - Arn
       DefaultInstanceProfileArn: 
         Fn::GetAtt:
-          - InstanceProfile
+          - InstanceProfileOpenVPN
           - Arn
       ConfigurationManager:
         Name: Chef
@@ -385,7 +653,7 @@ Resources:
         Url:
           Ref: CookbookUrl
       DefaultSubnetId:
-        Ref: SubnetIdHost
+        Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
       VpcId:
         Ref: VpcId
       UseOpsworksSecurityGroups: true
@@ -402,10 +670,10 @@ Resources:
               "auth.ldap.0.add_req": "${LdapGroupVPNRequirement}",
               "auth.ldap.0.bind_dn": "${LdapBindDn}",
               "auth.ldap.0.bind_pw_encrypted": "${KmsEncryptResult.Value}",
-              "auth.ldap.0.server.0.host": "${LdapHostname}",
+              "auth.ldap.0.server.0.host": "${LdapDnsRecord}",
               "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
               "cs.https.port": "${WebPort}",
-              "host.name": "${DnsRecord}",
+              "host.name": "${LdapDnsRecord}",
               "vpn.client.routing.inter_client": "${ClientsTalkEachOther}",
               "vpn.client.routing.reroute_gw": "${RouteInternetTraffic}",
               "vpn.daemon.0.client.netmask_bits": "${ClientNetmask}",
@@ -416,6 +684,17 @@ Resources:
               "vpn.server.routing.private_network.1": "${PrivateNetworkAccess2}",
               "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}",
               "enable_mfa": ${EnableMfa}
+            },
+            "elasticsearch": {
+              "http_port": "${ElasticsearchPort}",
+              "http_ip": "${ElasticsearchHost}"
+            },
+            "kibana": {
+              "http_port": "${KibanaPort}",
+              "http_ip": "${KibanaHost}"
+            },
+            "filebeat": {
+              "enabled": "${LoggingToElasticsearchEnabled}"
             }
           }
       Tags:
@@ -464,7 +743,7 @@ Resources:
       SecurityGroups:
         - Ref: AlbSecurityGroup
       Subnets:
-        Ref: SubnetIdLoadBalancer
+        Ref: SubnetIdsPublic
       ConnectionDrainingPolicy:
         Enabled: 'true'
         Timeout: '300'
@@ -501,6 +780,7 @@ Resources:
         Ref: Layer
 
   InstanceOpsWorks: 
+    DependsOn: AWSDirectory
     Type: AWS::OpsWorks::Instance
     DependsOn: Elb
     Properties: 
@@ -512,7 +792,7 @@ Resources:
         Ref: InstanceType
       RootDeviceType: ebs
       SubnetId:
-        Ref: SubnetIdHost
+        Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
       Hostname: openvpn-1
       BlockDeviceMappings:
         - DeviceName: ROOT_DEVICE
@@ -521,16 +801,16 @@ Resources:
             VolumeSize:
               Ref: InstanceRootVolumeSize
 
-  Route53Record:
+  Route53RecordOpenVPN:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneId:
-        Ref: DnsZone
+        Ref: OpenVPNDnsZone
       Comment: 
         Fn::Sub: Route53-record-for-OpenVPN
       RecordSets:
       - Name:
-          Ref: DnsRecord
+          Ref: OpenVPNDnsRecord
         Type: A
         AliasTarget:
           HostedZoneId: 
@@ -542,48 +822,98 @@ Resources:
               - Elb
               - DNSName
 
-
 Outputs:
-  AdminUrl:
+  AdminUrlOpenVPN:
     Export:
       Name:
-        Fn::Sub: "${AWS::StackName}-AdminUrl"
+        Fn::Sub: "${AWS::StackName}-AdminUrlOpenVPN"
     Value:
-      Fn::Sub: "https://${DnsRecord}:${WebPort}/admin"
+      Fn::Sub: "https://${OpenVPNDnsRecord}:${WebPort}/admin"
 
-  ClientUrl:
+  ClientUrlOpenVPN:
     Export:
       Name:
-        Fn::Sub: "${AWS::StackName}-ClientUrl"
+        Fn::Sub: "${AWS::StackName}-ClientUrlOpenVPN"
     Value:
-      Fn::Sub: "https://${DnsRecord}:${WebPort}"
+      Fn::Sub: "https://${OpenVPNDnsRecord}:${WebPort}"
+
+  OpsWorksStackId:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-OpsWorksStack"
+    Value:
+      Ref: OpsWorksStack
+
+  LayerId:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-Layer"
+    Value:
+      Ref: Layer
+
+  JumpboxIp:
+    Condition: DeployJumpbox
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-JumpboxIp"
+    Value:
+      Fn::If:
+        - PublicJumpbox
+        - Fn::GetAtt: JumpboxEc2.PublicIp
+        - Fn::GetAtt: JumpboxEc2.PrivateIp
+
+  DnsIpAddresses:
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-DnsIpAddresses
+    Value:
+      Fn::Join:
+        - ", "
+        - Fn::GetAtt: AWSDirectory.DnsIpAddresses
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
+    - Label:
+        default: ActiveDirectory
+      Parameters:
+      - Size
+      - EnableSso
+      - Name
+      - ShortName
+      - Password
+      - NewVpc
+      - VpcId
+      - SubnetIdsPrivate
+      - SubnetIdsPublic
+      - LdapDnsZone
+      - LdapDnsRecord
+    - Label:
+        default: Jumpbox
+      Parameters:
+      - Jumpbox
+      - JumpboxAmi
+      - JumpboxKeyPair
+      - JumpboxType
+      - JumpboxInstanceType
     - Label:
         default: OpenVPN
       Parameters:
       - Size
       - CookbookUrl
       - Version
-      - OpsWorksStackName
       - InstanceType
       - InstanceRootVolumeSize
-      - VpcId
-      - SubnetIdHost
-      - SubnetIdLoadBalancer
       - SslLoadBalancer
       - AdminPassword
-      - DnsRecord
-      - DnsZone
+      - OpenVPNDnsRecord
+      - OpenVPNDnsZone
       - EnableMfa
     - Label:
         default: LDAP
       Parameters:
       - LdapBindDn
       - LdapBindPassword
-      - LdapHostname
       - LdapUsersBaseDn
       - LdapGroupVPNRequirement
       - LdapAdminUsername
@@ -601,58 +931,11 @@ Metadata:
       - PrivateNetworkAccess2
       - PrivateNetworkAccess3
       - WebPort
-    ParameterLabels:
-      CookbookUrl:
-        default: Cookbook URL
-      Version:
-        default: OpenVPN Version
-      OpsWorksStackName:
-        default: OpenVPN OpsWorks stack name
-      InstanceType:
-        default: OpenVPN Instance Size
-      InstanceRootVolumeSize:
-        default: OpenVPN Root Volume Size
-      VpcId:
-        default: OpenVPN VPC
-      SubnetIdHost:
-        default: OpenVPN Subnet ID for host
-      SubnetIdLoadBalancer:
-        default: OpenVPN Subnet IDs for load balancer
-      SslLoadBalancer:
-        default: SSL Certificate for Load Balancer
-      AdminPassword:
-        default: OpenVPN initial admin password
-      DnsRecord:
-        default: OpenVPN DNS hostname
-      DnsZone:
-        default: OpenVPN DNS Zone
-      EnableMfa:
-        default: Enable multi-factor authentication
-      LdapBindDn:
-        default: LDAP username for OpenVPN used for querying
-      LdapBindPassword:
-        default: LDAP password for OpenVPN used for querying
-      LdapHostname:
-        default: LDAP hostname
-      LdapUsersBaseDn:
-        default: LDAP base user DN
-      LdapGroupVPNRequirement:
-        default: LDAP group requirement
-      LdapAdminUsername:
-        default: LDAP admin username
-      ClientNetmask:
-        default: Client network mask
-      ClientNetwork:
-        default: Client network ip
-      PrivateNetworkAccess1:
-        default: Client network AWS access ip cidr 1
-      PrivateNetworkAccess2:
-        default: Client network AWS access ip cidr 2
-      PrivateNetworkAccess3:
-        default: Client network AWS access ip cidr 3
-      RouteInternetTraffic:
-        default: Client network traffic routed through OpenVPN
-      WebPort:
-        default: Port to use for HTTPS web interface
-      ClientsTalkEachOther:
-        default: Should the clients talk to each other?
+    - Label:
+        default: Logging
+      Parameters:
+      - ElasticsearchHost
+      - ElasticsearchPort
+      - KibanaHost
+      - KibanaPort
+      - LoggingToElasticsearchEnabled

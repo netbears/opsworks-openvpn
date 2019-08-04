@@ -6,3 +6,5 @@ easy-rsa/
 *.zip
 
 *.gz
+
+\.env

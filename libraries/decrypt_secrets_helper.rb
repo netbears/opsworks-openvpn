@@ -10,8 +10,6 @@ module DecryptSecrets
     def self.get_metadata(path)
       JSON.parse(Net::HTTP.get('169.254.169.254', path))
     end
-
-    # rubocop:disable all
     def self.decrypt(secret)
       decoded = Base64.decode64(secret)
 
@@ -23,5 +21,3 @@ module DecryptSecrets
     # rubocop:enable all
   end
 end
-
-
