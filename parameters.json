@@ -112,12 +112,8 @@
     "ParameterValue": "${SimpleADPassword}"
   },
   {
-    "ParameterKey": "NewVpc",
-    "ParameterValue": "${SimpleADNewVpc}"
-  },
-  {
     "ParameterKey": "VpcId",
-    "ParameterValue": "${SimpleADVpcId}"
+    "ParameterValue": "${VpcId}"
   },
   {
     "ParameterKey": "SubnetIdsPrivate",
@@ -154,70 +150,6 @@
   {
     "ParameterKey": "JumpboxInstanceType",
     "ParameterValue": "${SimpleADJumpboxInstanceType}"
-  },
-  {
-    "ParameterKey": "VPCSubnetCidrBlock",
-    "ParameterValue": "${VPCSubnetCidrBlock}"
-  },
-  {
-    "ParameterKey": "AvailabilityZone1",
-    "ParameterValue": "${AvailabilityZone1}"
-  },
-  {
-    "ParameterKey": "AvailabilityZone2",
-    "ParameterValue": "${AvailabilityZone2}"
-  },
-  {
-    "ParameterKey": "AvailabilityZone3",
-    "ParameterValue": "${AvailabilityZone3}"
-  },
-  {
-    "ParameterKey": "PublicSubnetCidrBlock1",
-    "ParameterValue": "${PublicSubnetCidrBlock1}"
-  },
-  {
-    "ParameterKey": "PublicSubnetCidrBlock2",
-    "ParameterValue": "${PublicSubnetCidrBlock2}"
-  },
-  {
-    "ParameterKey": "PublicSubnetCidrBlock3",
-    "ParameterValue": "${PublicSubnetCidrBlock3}"
-  },
-  {
-    "ParameterKey": "PrivateSubnetCidrBlock1",
-    "ParameterValue": "${PrivateSubnetCidrBlock1}"
-  },
-  {
-    "ParameterKey": "PrivateSubnetCidrBlock2",
-    "ParameterValue": "${PrivateSubnetCidrBlock2}"
-  },
-  {
-    "ParameterKey": "PrivateSubnetCidrBlock3",
-    "ParameterValue": "${PrivateSubnetCidrBlock3}"
-  },
-  {
-    "ParameterKey": "RemoteCidrForSecurityGroup",
-    "ParameterValue": "${RemoteCidrForSecurityGroup}"
-  },
-  {
-    "ParameterKey": "RemoteCidrForPublicAcl",
-    "ParameterValue": "${RemoteCidrForPublicAcl}"
-  },
-  {
-    "ParameterKey": "AllowAllInboundPublicRuleNumber",
-    "ParameterValue": "${AllowAllInboundPublicRuleNumber}"
-  },
-  {
-    "ParameterKey": "AllowAllInboundPrivateRuleNumber",
-    "ParameterValue": "${AllowAllInboundPrivateRuleNumber}"
-  },
-  {
-    "ParameterKey": "AllowAllOutboundPublicRuleNumber",
-    "ParameterValue": "${AllowAllOutboundPublicRuleNumber}"
-  },
-  {
-    "ParameterKey": "AllowAllOutboundPrivateRuleNumber",
-    "ParameterValue": "${AllowAllOutboundPrivateRuleNumber}"
   },
   {
     "ParameterKey": "ElasticsearchPort",

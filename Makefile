@@ -15,18 +15,19 @@ FETCH_STACKID = $(shell aws cloudformation describe-stacks --profile ${AwsProfil
 SET_STACK_ID = $(eval export STACK_ID=$(FETCH_STACKID))
 
 launch_stack:
+	$(SET_PARAMETERS)
 	aws cloudformation create-stack \
 		--stack-name ${StackName} \
-		--template-body file://cloudformation-template-AD-and-OpenVPN.yaml \
+		--template-body file://cloudformation-template.yaml \
 		--profile ${AwsProfile} \
 		--capabilities CAPABILITY_IAM  CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-		--parameters $(cat parameters.json)
+		--parameters '${PARAMETERS}'
 	aws cloudformation wait stack-create-complete --stack-name ${StackName} --profile ${AwsProfile}
 update_stack:
 	$(SET_PARAMETERS)
 	aws cloudformation update-stack \
 		--stack-name ${StackName} \
-		--template-body file://cloudformation-template-AD-and-OpenVPN.yaml \
+		--template-body file://cloudformation-template.yaml \
 		--profile ${AwsProfile} \
 		--capabilities CAPABILITY_IAM  CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
 		--parameters '${PARAMETERS}'
