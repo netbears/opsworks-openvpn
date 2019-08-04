@@ -472,7 +472,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile:
-        Ref: InstanceProfile
+        Ref: InstanceProfileJumpbox
       SsmAssociations:
       - DocumentName:
           Ref: SsmDocument
@@ -532,7 +532,7 @@ Resources:
               - Ref: PrivateSubnet1
             - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
 
-  InstanceRole:
+  InstanceRoleJumpbox:
     Condition: DeployJumpbox
     Type: AWS::IAM::Role
     Properties:
@@ -547,14 +547,24 @@ Resources:
       Path: /
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-ssm-create-association
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:CreateAssociation'
+                Resource:
+                  - '*'
 
-  InstanceProfile:
+  InstanceProfileJumpbox:
     Condition: DeployJumpbox
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-        - Ref: InstanceRole
+        - Ref: InstanceRoleJumpbox
 
   InstanceSecurityGroup:
     Condition: DeployJumpbox
@@ -654,7 +664,7 @@ Resources:
             Resource: "*"
             Principal:
               AWS:
-                - Fn::GetAtt: InstanceRole.Arn
+                - Fn::GetAtt: InstanceRoleOpenVPN.Arn
 
   LdapPasswordAlias:
     Type: AWS::KMS::Alias
@@ -691,7 +701,7 @@ Resources:
                   - 'rds:*'
                 Resource: '*'
 
-  InstanceRole:
+  InstanceRoleOpenVPN:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -735,12 +745,12 @@ Resources:
                 Resource:
                   - '*'
 
-  InstanceProfile:
+  InstanceProfileOpenVPN:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-        - Ref: InstanceRole
+        - Ref: InstanceRoleOpenVPN
 
   Ec2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -804,7 +814,7 @@ Resources:
           - Arn
       DefaultInstanceProfileArn: 
         Fn::GetAtt:
-          - InstanceProfile
+          - InstanceProfileOpenVPN
           - Arn
       ConfigurationManager:
         Name: Chef

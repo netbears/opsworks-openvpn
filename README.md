@@ -28,6 +28,14 @@ make launch_stack
 make bootstrap
 ```
 
+## Manage users and permissions in LDAP
+
+1) Install AD  Administration Tools -> https://docs.aws.amazon.com/directoryservice/latest/admin-guide/simple_ad_install_ad_tools.html
+2) Create a user -> https://docs.aws.amazon.com/directoryservice/latest/admin-guide/simple_ad_manage_users_groups_create_user.html
+3) Reset a user password -> https://docs.aws.amazon.com/directoryservice/latest/admin-guide/simple_ad_manage_users_groups_reset_password.html
+4) Create a group -> https://docs.aws.amazon.com/directoryservice/latest/admin-guide/simple_ad_manage_users_groups_create_group.html
+5) Add a user to a group -> https://docs.aws.amazon.com/directoryservice/latest/admin-guide/simple_ad_manage_users_groups_add_user_to_group.html
+
 ## Make changes to deployment
 * Make your changes to the YAML files
 * Deploy (just) the YAML file changes
