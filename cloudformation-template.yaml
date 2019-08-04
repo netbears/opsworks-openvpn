@@ -5,7 +5,7 @@ Parameters:
   #OpenVPN
   CookbookUrl:
     Type: String
-    Default: 'https://github.com/netbears/opsworks-openvpn/releases/download/v1.0.0/cookbooks-v1.0.0.tar.gz'
+    Default: https://github.com/netbears/opsworks-openvpn/releases/download/v1.0.0/cookbooks-v1.0.0.tar.gz
 
   Version:
     Type: String
@@ -289,7 +289,6 @@ Resources:
           Fn::GetAtt: AWSDirectory.DnsIpAddresses
 
   SsmDocument:
-    Condition: DeployJumpbox
     DependsOn: AWSDirectory
     Type: AWS::SSM::Document
     Properties:
@@ -370,7 +369,6 @@ Resources:
             - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
 
   InstanceRoleJumpbox:
-    Condition: DeployJumpbox
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -396,7 +394,6 @@ Resources:
                   - '*'
 
   InstanceProfileJumpbox:
-    Condition: DeployJumpbox
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
@@ -404,7 +401,6 @@ Resources:
         - Ref: InstanceRoleJumpbox
 
   InstanceSecurityGroup:
-    Condition: DeployJumpbox
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow http to client host
