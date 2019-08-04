@@ -290,8 +290,8 @@ Resources:
 
   SsmDocument:
     Condition: DeployJumpbox
-    Type: AWS::SSM::Document
     DependsOn: AWSDirectory
+    Type: AWS::SSM::Document
     Properties:
       Content:
         schemaVersion: '1.2'
@@ -308,6 +308,7 @@ Resources:
             default: []
             description: "(Optional) The IP addresses of the DNS servers in the directory.
               Required when DHCP is not configured. Learn more at http://docs.aws.amazon.com/directoryservice/latest/simple-ad/join_get_dns_addresses.html"
+            allowedPattern: "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
         runtimeConfig:
           aws:domainJoin:
             properties:
@@ -322,25 +323,27 @@ Resources:
     Properties:
       IamInstanceProfile:
         Ref: InstanceProfileJumpbox
-      SsmAssociations:
-      - DocumentName:
-          Ref: SsmDocument
-        AssociationParameters:
-        - Key: directoryId
-          Value:
-            Ref: AWSDirectory
-        - Key: directoryName
-          Value:
-          - Ref: Name
-        - Key: dnsIpAddresses
-          Value:
-            - Fn::Select:
-                - 0
-                - Fn::GetAtt: AWSDirectory.DnsIpAddresses
-            - Fn::Select:
-                - 1
-                - Fn::GetAtt: AWSDirectory.DnsIpAddresses
-
+      SsmAssociations: 
+        - 
+          DocumentName: 
+            Ref: SsmDocument
+          AssociationParameters: 
+            - 
+              Key: "directoryId"
+              Value: 
+                - 
+                  Ref: AWSDirectory
+            - 
+              Key: "directoryName"
+              Value: 
+                - 
+                  Ref: Name
+            - 
+              Key: "dnsIpAddresses"
+              Value: 
+                Fn::GetAtt: 
+                  - "AWSDirectory"
+                  - "DnsIpAddresses"
       KeyName:
         Ref: JumpboxKeyPair
       ImageId:
