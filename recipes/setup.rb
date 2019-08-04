@@ -45,3 +45,7 @@ execute 'import_vpn_settings' do
     rm -f #{node['openvpnas']['config_path']}/config.json
   BASH
 end
+
+include_recipe 'openvpn_stack::node_exporter'
+include_recipe 'openvpn_stack::logrotate'
+include_recipe 'openvpn_stack::filebeat'
