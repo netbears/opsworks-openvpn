@@ -218,5 +218,25 @@
   {
     "ParameterKey": "AllowAllOutboundPrivateRuleNumber",
     "ParameterValue": "${AllowAllOutboundPrivateRuleNumber}"
+  },
+  {
+    "ParameterKey": "ElasticsearchPort",
+    "ParameterValue": "${ElasticsearchPort}"
+  },
+  {
+    "ParameterKey": "ElasticsearchHost",
+    "ParameterValue": "${ElasticsearchHost}"
+  },
+  {
+    "ParameterKey": "KibanaPort",
+    "ParameterValue": "${KibanaPort}"
+  },
+  {
+    "ParameterKey": "KibanaHost",
+    "ParameterValue": "${KibanaHost}"
+  },
+  {
+    "ParameterKey": "LoggingToElasticsearchEnabled",
+    "ParameterValue": "${OpenVPNFilebeatEnabled}"
   }
 ]

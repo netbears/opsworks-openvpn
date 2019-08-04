@@ -28,16 +28,13 @@ Parameters:
   SslLoadBalancer:
     Type: String
     Description: SSL ARN from Certificate Manager
-    Default: arn:aws:acm:us-east-1:359360911388:certificate/0fbec0ab-69ea-46ab-bb0f-aecd359b4621
 
   OpenVPNDnsRecord:
     Type: String
-    Default: vpn.aws.netbears.com
 
   OpenVPNDnsZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 hosted zone in which to place dns record
-    Default: Z37W7PCK0HCQPS
 
   EnableMfa:
     Type: String
@@ -49,28 +46,23 @@ Parameters:
   #LDAP
   LdapBindDn:
     Type: String
-    Default: openvpn@netbears.com
     Description: User will have to be created in AD after stack creation
 
   LdapBindPassword:
     Type: String
     NoEcho: 'true'
-    Default: 'openvpn123!'
     Description: Password for bind user needs to be set up to this one after stack creation
 
   LdapUsersBaseDn:
     Type: String
-    Default: OU=Users,OU=NETBEARS,DC=netbears,DC=com
     Description: Make sure the path exists in AD after stack creation
 
   LdapGroupVPNRequirement:
     Type: String
-    Default: memberOf=CN=VPN,OU=Groups,OU=NETBEARS,DC=netbears,DC=com
     Description: Make sure the group exists in AD after stack creation
 
   LdapAdminUsername:
     Type: String
-    Default: mariusmitrofan
     Description: Make sure the user exists in AD after stack creation
 
   #Network
@@ -146,12 +138,10 @@ Parameters:
 
   Name:
     Type: String
-    Default: netbears.com
     Description: The fully qualified domain name for the AWS Managed Microsoft AD directory, such as corp.example.com. This name will resolve inside your VPC only. It does not need to be publicly resolvable.
 
   ShortName:
     Type: String
-    Default: netbears
     Description: The NetBIOS name for your domain, such as CORP. For example, CORP for the directory DNS corp.example.com.
 
   Password:
@@ -159,7 +149,6 @@ Parameters:
     NoEcho: 'true'
     Description: The password for the default administrative user named Admin. If you need to change the password for the administrator account, see the ResetUserPassword API call in the AWS Directory Service API Reference.
     AllowedPattern: (?=^.{8,64}$)((?=.*\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[^A-Za-z0-9\s])(?=.*[a-z])|(?=.*[^A-Za-z0-9\s])(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9\s]))^.*
-    Default: 6hYHhhuvMUFevG7a
 
   NewVpc:
     Type: String
@@ -187,11 +176,9 @@ Parameters:
   LdapDnsZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 hosted zone in which to place dns record
-    Default: Z37W7PCK0HCQPS
 
   LdapDnsRecord:
     Type: String
-    Default: ldap.aws.netbears.com
 
   #Jumpbox
   Jumpbox:
@@ -210,7 +197,6 @@ Parameters:
   JumpboxKeyPair:
     Type: AWS::EC2::KeyPair::KeyName
     Description: KeyPair for EC2 Instance
-    Default: mariusmitrofan
 
   JumpboxType:
     Type: String
@@ -329,6 +315,29 @@ Parameters:
     Type: Number
     Default: '100'
 
+  # Logging
+  ElasticsearchPort:
+    Type: String
+    Default: '9200'
+
+  ElasticsearchHost:
+    Type: String
+
+  KibanaPort:
+    Type: String
+    Default: '5601'
+
+  KibanaHost:
+    Type: String
+
+  LoggingToElasticsearchEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to deploy Filebeat and connect it to ElasticSearch
+
 Conditions:
   CreateVpc:
     Fn::Equals:
@@ -413,7 +422,7 @@ Resources:
             - Ref: VPC
             - Ref: VpcId
 
-  Route53Record:
+  Route53RecordLdap:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneId:
@@ -843,6 +852,17 @@ Resources:
               "vpn.server.routing.private_network.1": "${PrivateNetworkAccess2}",
               "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}",
               "enable_mfa": ${EnableMfa}
+            },
+            "elasticsearch": {
+              "http_port": "${ElasticsearchPort}",
+              "http_ip": "${ElasticsearchHost}"
+            },
+            "kibana": {
+              "http_port": "${KibanaPort}",
+              "http_ip": "${KibanaHost}"
+            },
+            "filebeat": {
+              "enabled": "${LoggingToElasticsearchEnabled}"
             }
           }
       Tags:
@@ -946,7 +966,7 @@ Resources:
       SubnetId:
         Fn::If:
           - CreateVpc
-          - PrivateSubnet1
+          - Ref: PrivateSubnet1
           - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
       Hostname: openvpn-1
       BlockDeviceMappings:
@@ -956,7 +976,7 @@ Resources:
             VolumeSize:
               Ref: InstanceRootVolumeSize
 
-  Route53Record:
+  Route53RecordOpenVPN:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneId:
@@ -1507,6 +1527,20 @@ Outputs:
     Value:
       Fn::Sub: "https://${OpenVPNDnsRecord}:${WebPort}"
 
+  OpsWorksStackId:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-OpsWorksStack"
+    Value:
+      Ref: OpsWorksStack
+
+  LayerId:
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-Layer"
+    Value:
+      Ref: Layer
+
   JumpboxIp:
     Condition: DeployJumpbox
     Export:
@@ -1677,6 +1711,14 @@ Metadata:
       - PrivateNetworkAccess2
       - PrivateNetworkAccess3
       - WebPort
+    - Label:
+        default: Logging
+      Parameters:
+      - ElasticsearchHost
+      - ElasticsearchPort
+      - KibanaHost
+      - KibanaPort
+      - LoggingToElasticsearchEnabled
     ParameterLabels:
       RemoteCidrForSecurityGroup:
         default: Network CIDR for SG
