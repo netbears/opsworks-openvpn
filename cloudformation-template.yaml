@@ -669,7 +669,7 @@ Resources:
               "auth.ldap.0.server.0.host": "${LdapDnsRecord}",
               "auth.ldap.0.users_base_dn": "${LdapUsersBaseDn}",
               "cs.https.port": "${WebPort}",
-              "host.name": "${LdapDnsRecord}",
+              "host.name": "${OpenVPNDnsRecord}",
               "vpn.client.routing.inter_client": "${ClientsTalkEachOther}",
               "vpn.client.routing.reroute_gw": "${RouteInternetTraffic}",
               "vpn.daemon.0.client.netmask_bits": "${ClientNetmask}",
