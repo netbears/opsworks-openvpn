@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-instance = search('aws_opsworks_instance', 'self:true').first
-hostname = instance['private_ip']
-
 directory "#{node['filebeat']['conf_path']}/" do
   owner 'root'
   group 'root'
@@ -14,7 +11,6 @@ template "#{node['filebeat']['conf_path']}/filebeat.yml" do
   owner 'root'
   group 'root'
   mode  '0640'
-  variables private_ip: hostname
   action :create
 end
 

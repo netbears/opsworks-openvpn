@@ -232,6 +232,14 @@ Parameters:
       - 'false'
     Description: Whether to deploy Filebeat and connect it to ElasticSearch
 
+  MonitoringToElasticsearchEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Whether to deploy Metricbeat and connect it to ElasticSearch
+
 Conditions:
   DeployJumpbox:
     Fn::Equals:
@@ -691,6 +699,9 @@ Resources:
             },
             "filebeat": {
               "enabled": "${LoggingToElasticsearchEnabled}"
+            },
+            "metricbeat": {
+              "enabled": "${MonitoringToElasticsearchEnabled}"
             }
           }
       Tags:
@@ -935,3 +946,4 @@ Metadata:
       - KibanaHost
       - KibanaPort
       - LoggingToElasticsearchEnabled
+      - MonitoringToElasticsearchEnabled

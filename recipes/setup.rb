@@ -49,4 +49,5 @@ end
 include_recipe 'openvpn_stack::node_exporter'
 include_recipe 'openvpn_stack::logrotate'
 include_recipe 'openvpn_stack::filebeat' if node['filebeat']['enabled'] == 'true'
+include_recipe 'openvpn_stack::metricbeat' if node['metricbeat']['enabled'] == 'true'
 include_recipe 'ntp::default'
