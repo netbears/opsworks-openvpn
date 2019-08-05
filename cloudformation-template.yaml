@@ -153,17 +153,14 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: Setting takes effect only if NewVpc is set to "existing"
-    Default: ignore
 
   SubnetIdsPrivate:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PRIVATE subnets)
-    Default: ignore1,ignore2
 
   SubnetIdsPublic:
     Type: List<AWS::EC2::Subnet::Id>
     Description: Setting takes effect only if CreateVpc is set to "existing" (specify AT LEAST 2 PUBLIC subnets)
-    Default: ignore1,ignore2
 
   LdapDnsZone:
     Type: AWS::Route53::HostedZone::Id
