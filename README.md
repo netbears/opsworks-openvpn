@@ -68,11 +68,12 @@ If that doesn't happen or you want to speed things up, just go to the `Deploymen
 
 ## Monitoring
 The stack automatically deploys the following logic:
-- NodeExporter: which is connected to the internal Prometheus service
-- CloudWatch: detailed-monitoring is enabled for both ASGs and SpotFleets
+- NodeExporter: which can be connected to any running Prometheus instance
+- CloudWatch: because underlying system is OpsWorks for provisioning, you get the benefits of exporting automatically granular data to CloudWatch which can be viewed in the Monitoring section of the stack
+- Metricbeat: this is available through the Kibana UI and offers more detailed information about the running nodes (available only if `OpenVPNMetricbeatEnabled` is set to `true` in `.env`)
 
 ## Logging
-The stack pushes all ElasticSearch logs within to filebeat, they get filtered with logstash and then pre-defined ElasticSearch stack under index `filebeat-*`.
+The stack pushes all ElasticSearch logs within to filebeat and then they get sent to the pre-defined ElasticSearch stack under index `filebeat-*`  (available only if `OpenVPNFilebeatEnabled` is set to `true` in `.env`).
 
 ## Security concerns
 * This stack is missing an ingress controller, therefore any services that need to be publicly available have to use a LoadBalancer
