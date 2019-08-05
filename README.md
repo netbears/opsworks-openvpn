@@ -40,7 +40,7 @@ make bootstrap
 * Make your changes to the YAML files
 * Deploy (just) the YAML file changes
 ```bash
-make deploy
+make update_stack
 ```
 
 ## SSH permissions
@@ -60,12 +60,6 @@ Click on `Edit`, tick the boxes for `sudo` and/or `ssh` and hit `Save`
 
 If that doesn't happen or you want to speed things up, just go to the `Deployments` tab, hit `Run Command` and execute the `Configure` command on all running instances.
 
-## Add new nodes to cluster
-
-* Go to your CloudFormation stack
-* Click on `Update using current template`
-* Update values for `NodeAutoScalingGroupMinSize` and/or `NodeAutoScalingGroupMaxSize`
-
 ## Monitoring
 The stack automatically deploys the following logic:
 - NodeExporter: which can be connected to any running Prometheus instance
@@ -76,5 +70,4 @@ The stack automatically deploys the following logic:
 The stack pushes all ElasticSearch logs within to filebeat and then they get sent to the pre-defined ElasticSearch stack under index `filebeat-*`  (available only if `OpenVPNFilebeatEnabled` is set to `true` in `.env`).
 
 ## Security concerns
-* This stack is missing an ingress controller, therefore any services that need to be publicly available have to use a LoadBalancer
-* If you don't want to use the LoadBalancer approach for each service, you should consider deploying an ingress-controller (such as nginx-ingress-controller or traefik-ingress-controller) and expose the services through Ingress rules with a ClusterIP
+* For all intents and purposes, you should set the `EnableMfa` parameter to true in CloudFormation (`OpenVPNEnableMfa` to `true` in `.env`) so that your users are enforced to use and setup Multi-Factor Authentication
