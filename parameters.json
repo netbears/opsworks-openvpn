@@ -170,5 +170,9 @@
   {
     "ParameterKey": "LoggingToElasticsearchEnabled",
     "ParameterValue": "${OpenVPNFilebeatEnabled}"
+  },
+  {
+    "ParameterKey": "MonitoringToElasticsearchEnabled",
+    "ParameterValue": "${OpenVPNMetricbeatEnabled}"
   }
 ]
