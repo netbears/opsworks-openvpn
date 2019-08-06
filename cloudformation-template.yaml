@@ -903,7 +903,6 @@ Metadata:
     - Label:
         default: OpenVPN
       Parameters:
-      - Size
       - CookbookUrl
       - Version
       - InstanceType
