@@ -684,7 +684,7 @@ Resources:
               "vpn.server.routing.private_network.0": "${PrivateNetworkAccess1}",
               "vpn.server.routing.private_network.1": "${PrivateNetworkAccess2}",
               "vpn.server.routing.private_network.2": "${PrivateNetworkAccess3}",
-              "enable_mfa": ${EnableMfa}
+              "enable_mfa": "${EnableMfa}"
             },
             "elasticsearch": {
               "http_port": "${ElasticsearchPort}",
