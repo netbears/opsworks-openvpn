@@ -43,4 +43,4 @@ default['openvpnas']['vpn.server.routing.private_network.1']    = ''   # 172.17.
 default['openvpnas']['vpn.server.routing.private_network.2']    = ''   # 172.23.0.0/16
 default['openvpnas']['vpn.server.duplicate_cn']                 = 'false'
 default['openvpnas']['vpn.server.config_text']                  = ''
-default['openvpnas']['enable_mfa'] = 'false'
+default['openvpnas']['enable_mfa']                              = 'false'
