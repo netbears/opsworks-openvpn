@@ -8,6 +8,7 @@ default['base_packages'] = %w[
   jq
   python3
   libmysqlclient-dev
+  net-tools
 ]
 default['custom_packages']            = []
 

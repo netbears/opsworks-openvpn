@@ -32,6 +32,13 @@ Parameters:
   OpenVPNDnsRecord:
     Type: String
 
+  GenerateOpenVPNDnsRecord:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
   OpenVPNDnsZone:
     Type: AWS::Route53::HostedZone::Id
     Description: Route53 hosted zone in which to place dns record
@@ -253,6 +260,11 @@ Conditions:
       - Ref: DaemonListenProtocol
       - tcp
 
+  DeployOpenVPNRecord:
+    Fn::Equals:
+      - Ref: GenerateOpenVPNDnsRecord
+      - 'true'
+
 Resources:
   AWSDirectory:
     Type: AWS::DirectoryService::SimpleAD
@@ -464,7 +476,7 @@ Resources:
             def lambda_handler(event, context):
               responseValue={}
               kms = boto3.client('kms',region_name="${AWS::Region}")
-              secret = kms.encrypt(KeyId="${LdapPasswordKey.Arn}",Plaintext="${LdapBindPassword}")
+              secret = kms.encrypt(KeyId=event['ResourceProperties']['LdapPasswordKeyArn'],Plaintext=event['ResourceProperties']['LdapBindPassword'])
               blob = secret["CiphertextBlob"]
               responseValue["Value"] = str(base64.b64encode(blob))[2:-1]
               cfnresponse.send(event, context, cfnresponse.SUCCESS, responseValue)
@@ -475,6 +487,10 @@ Resources:
     Properties:
       ServiceToken:
         Fn::GetAtt: KmsEncryptFunction.Arn
+      LdapBindPassword:
+        Ref: LdapBindPassword
+      LdapPasswordKeyArn:
+        Fn::GetAtt: LdapPasswordKey.Arn
 
   LdapPasswordKey:
     Type: AWS::KMS::Key
@@ -807,6 +823,7 @@ Resources:
 
   Route53RecordOpenVPN:
     Type: AWS::Route53::RecordSetGroup
+    Condition: DeployOpenVPNRecord
     Properties:
       HostedZoneId:
         Ref: OpenVPNDnsZone
@@ -911,6 +928,7 @@ Metadata:
       - AdminPassword
       - OpenVPNDnsRecord
       - OpenVPNDnsZone
+      - GenerateOpenVPNDnsRecord
       - EnableMfa
     - Label:
         default: LDAP

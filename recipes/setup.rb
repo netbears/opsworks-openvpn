@@ -6,18 +6,16 @@ execute 'apt-get update'
   package pkg
 end
 
-remote_file "/tmp/openvpn-as-#{node['openvpnas']['version']}-#{node['openvpnas']['ubuntu_version']}.amd_64.deb" do
-  source "http://swupdate.openvpn.org/as/openvpn-as-#{node['openvpnas']['version']}-#{node['openvpnas']['ubuntu_version']}.amd_64.deb"
-  owner 'root'
-  group 'root'
-  mode '0664'
-  action :create_if_missing
-  notifies :run, 'execute[extract_openvpnas]', :immediately
+execute 'wget -qO - https://as-repository.openvpn.net/as-repo-public.gpg | apt-key add -'
+
+file "/etc/apt/sources.list.d/openvpn-as-repo.list" do
+  content "deb http://as-repository.openvpn.net/as/debian bionic main"
 end
 
-execute 'extract_openvpnas' do
-  command "dpkg -i /tmp/openvpn-as-#{node['openvpnas']['version']}-#{node['openvpnas']['ubuntu_version']}.amd_64.deb"
-  cwd '/tmp/'
+execute 'apt-get update'
+
+package 'openvpn-as' do
+  version node['openvpnas']['version']
 end
 
 template "#{node['openvpnas']['config_path']}/config.json" do

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-default['openvpnas']['version']                                 = '2.7.4'
+default['openvpnas']['version']                                 = '2.7.5'
 default['openvpnas']['ubuntu_version']                          = 'Ubuntu18'
 default['openvpnas']['admin_username']                          = ''   # mariusmitrofan
 default['openvpnas']['config_path']                             = '/tmp'
