@@ -10,6 +10,7 @@ module DecryptSecrets
     def self.get_metadata(path)
       JSON.parse(Net::HTTP.get('169.254.169.254', path))
     end
+
     def self.decrypt(secret)
       decoded = Base64.decode64(secret)
 
@@ -18,6 +19,5 @@ module DecryptSecrets
       resp = client.decrypt(ciphertext_blob: decoded)
       resp.plaintext
     end
-    # rubocop:enable all
   end
 end

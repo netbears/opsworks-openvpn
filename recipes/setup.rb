@@ -8,8 +8,8 @@ end
 
 execute 'wget -qO - https://as-repository.openvpn.net/as-repo-public.gpg | apt-key add -'
 
-file "/etc/apt/sources.list.d/openvpn-as-repo.list" do
-  content "deb http://as-repository.openvpn.net/as/debian bionic main"
+file '/etc/apt/sources.list.d/openvpn-as-repo.list' do
+  content 'deb http://as-repository.openvpn.net/as/debian bionic main'
 end
 
 execute 'apt-get update'
