@@ -9,7 +9,7 @@ Parameters:
 
   Version:
     Type: String
-    Default: '2.7.4'
+    Default: '2.7.5-932a08a3-Ubuntu18'
 
   InstanceType:
     Type: String
@@ -813,7 +813,8 @@ Resources:
       RootDeviceType: ebs
       SubnetId:
         Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
-      Hostname: openvpn-1
+      Hostname:
+        Fn::Sub: openvpn-host-main
       BlockDeviceMappings:
         - DeviceName: ROOT_DEVICE
           Ebs:
