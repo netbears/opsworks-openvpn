@@ -5,7 +5,7 @@ Parameters:
   #OpenVPN
   CookbookUrl:
     Type: String
-    Default: https://github.com/netbears/opsworks-openvpn/releases/download/v1.0.0/cookbooks-v1.0.0.tar.gz
+    Default: https://github.com/netbears/opsworks-openvpn/releases/download/v1.1.0/cookbooks-v1.1.0.tar.gz
 
   Version:
     Type: String
@@ -57,8 +57,7 @@ Parameters:
 
   LdapBindPassword:
     Type: String
-    NoEcho: 'true'
-    Description: Password for bind user needs to be set up to this one after stack creation
+    NoEcho: true
 
   LdapUsersBaseDn:
     Type: String
@@ -127,13 +126,13 @@ Parameters:
       - 'udp'
 
   #ActiveDirectory
-  Size:
+  Edition:
     Type: String
-    Default: 'Small'
+    Default: 'Standard'
     AllowedValues:
-      - 'Small'
-      - 'Large'
-    Description: Small - Supports up to 500 users (~ 40 USD/month). Large - Supports up to 5,000 users (~ 150 USD/month).
+      - 'Standard'
+      - 'Enterprise'
+    Description: Standard is about 100 USD/month
 
   EnableSso:
     Type: String
@@ -153,7 +152,7 @@ Parameters:
 
   Password:
     Type: String
-    NoEcho: 'true'
+    NoEcho: true
     Description: The password for the default administrative user named Admin. If you need to change the password for the administrator account, see the ResetUserPassword API call in the AWS Directory Service API Reference.
     AllowedPattern: (?=^.{8,64}$)((?=.*\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[^A-Za-z0-9\s])(?=.*[a-z])|(?=.*[^A-Za-z0-9\s])(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9\s]))^.*
 
@@ -266,9 +265,11 @@ Conditions:
       - 'true'
 
 Resources:
-  AWSDirectory:
-    Type: AWS::DirectoryService::SimpleAD
+  AWSMicrosoftDirectory:
+    Type: AWS::DirectoryService::MicrosoftAD
     Properties:
+      Edition:
+        Ref: Edition
       EnableSso:
         Ref: EnableSso
       Name:
@@ -277,8 +278,6 @@ Resources:
         Ref: Password
       ShortName: 
         Ref: ShortName
-      Size:
-        Ref: Size
       VpcSettings:
         SubnetIds:
           - Fn::Select:
@@ -303,10 +302,10 @@ Resources:
         Type: A
         TTL: 300
         ResourceRecords:
-          Fn::GetAtt: AWSDirectory.DnsIpAddresses
+          Fn::GetAtt: AWSMicrosoftDirectory.DnsIpAddresses
 
   SsmDocument:
-    DependsOn: AWSDirectory
+    DependsOn: AWSMicrosoftDirectory
     Type: AWS::SSM::Document
     Properties:
       Content:
@@ -332,58 +331,146 @@ Resources:
               directoryName: "{{ directoryName }}"
               dnsIpAddresses: "{{ dnsIpAddresses }}"
 
-  JumpboxEc2:
-    DependsOn: AWSDirectory
+  LaunchTemplate:
     Condition: DeployJumpbox
-    Type: AWS::EC2::Instance
+    Type: AWS::EC2::LaunchTemplate
     Properties:
-      IamInstanceProfile:
-        Ref: InstanceProfileJumpbox
-      SsmAssociations: 
-        - 
-          DocumentName: 
-            Ref: SsmDocument
-          AssociationParameters: 
-            - 
-              Key: "directoryId"
-              Value: 
-                - 
-                  Ref: AWSDirectory
-            - 
-              Key: "directoryName"
-              Value: 
-                - 
-                  Ref: Name
-            - 
-              Key: "dnsIpAddresses"
-              Value: 
-                Fn::GetAtt: 
-                  - "AWSDirectory"
-                  - "DnsIpAddresses"
-      KeyName:
-        Ref: JumpboxKeyPair
-      ImageId:
-        Ref: JumpboxAmi
-      InstanceType:
-        Ref: JumpboxInstanceType
-      Tags:
-      - Key: Name
-        Value:
-          Fn::Sub: "${AWS::StackName}-Jumpbox"
-      NetworkInterfaces:
-      - AssociatePublicIpAddress:
-          Fn::If:
-            - PublicJumpbox
-            - 'true'
-            - 'false'
-        DeviceIndex: '0'
-        GroupSet:
-        - Ref: InstanceSecurityGroup
-        SubnetId:
-          Fn::If:
-            - PublicJumpbox
-            - Fn::Select: [ 0, Ref: SubnetIdsPublic ]
-            - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
+      LaunchTemplateData:
+        SecurityGroupIds:
+        - Fn::GetAtt: InstanceSecurityGroup.GroupId
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeSize: 50
+              VolumeType: gp2
+              DeleteOnTermination: true
+        DisableApiTermination: false
+        EbsOptimized: false
+        IamInstanceProfile:
+          Arn:
+            Fn::GetAtt:
+              - InstanceProfileJumpbox
+              - Arn
+        ImageId:
+          Ref: JumpboxAmi
+        InstanceInitiatedShutdownBehavior: terminate
+        InstanceType:
+          Ref: JumpboxInstanceType
+        KeyName:
+          Ref: JumpboxKeyPair
+        Monitoring:
+          Enabled: false
+        TagSpecifications:
+        - ResourceType: instance
+          Tags:
+            - Key: Name
+              Value:
+                Fn::Sub: "${AWS::StackName}-Jumpbox"
+        UserData:
+          Fn::Base64:
+            Fn::Join:
+              - ''
+              - - <powershell>
+                - Install-WindowsFeature -Name GPMC,RSAT-AD-PowerShell,RSAT-AD-AdminCenter,RSAT-ADDS-Tools,RSAT-DNS-Server,ADFS-Federation; Install-PackageProvider -Name NuGet -Force; Install-Module MSOnline -Force
+                - </powershell>
+
+  SpotFleetIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - spotfleet.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetAutoscaleRole
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+      Policies:
+      - PolicyName:
+          Fn::Sub: ${AWS::StackName}-GetInstanceProfile
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - iam:GetInstanceProfile
+            Resource: "*"
+
+  SpotFleetIAMAutoScaleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - application-autoscaling.amazonaws.com
+            - eks.amazonaws.com
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetAutoscaleRole
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+
+  SpotFleet:
+    Condition: DeployJumpbox
+    Type: AWS::EC2::SpotFleet
+    Properties:
+      SpotFleetRequestConfigData:
+        AllocationStrategy: diversified
+        ExcessCapacityTerminationPolicy: default
+        IamFleetRole:
+          Fn::GetAtt:
+            - SpotFleetIAMRole
+            - Arn
+        InstanceInterruptionBehavior: terminate
+        ReplaceUnhealthyInstances: true
+        SpotPrice: '5'
+        TargetCapacity: '1'
+        TerminateInstancesWithExpiration: true
+        LaunchTemplateConfigs:
+          - LaunchTemplateSpecification:
+              LaunchTemplateId:
+                Ref: LaunchTemplate
+              Version:
+                Fn::GetAtt:
+                  - LaunchTemplate
+                  - LatestVersionNumber
+            Overrides:
+            - InstanceType:
+                Ref: JumpboxInstanceType
+              WeightedCapacity: '1'
+              SubnetId:
+                Fn::If:
+                  - PublicJumpbox
+                  - Fn::Select: [ 0, Ref: SubnetIdsPublic ]
+                  - Fn::Select: [ 0, Ref: SubnetIdsPrivate ]
+
+  SsmAssociationSpotFleet:
+    Type: AWS::SSM::Association
+    Condition: DeployJumpbox
+    Properties: 
+      Name:
+        Ref: SsmDocument
+      Parameters: 
+        directoryId :
+          - Ref: AWSMicrosoftDirectory
+        directoryName :
+          - Ref: Name
+        dnsIpAddresses :
+          - Fn::Select:
+              - 0
+              - Fn::GetAtt: ["AWSMicrosoftDirectory","DnsIpAddresses"]
+          - Fn::Select:
+              - 1
+              - Fn::GetAtt: ["AWSMicrosoftDirectory","DnsIpAddresses"]
+      Targets:
+        - Key: "tag:Name"
+          Values:
+            - Fn::Sub: "${AWS::StackName}-Jumpbox"
 
   InstanceRoleJumpbox:
     Type: AWS::IAM::Role
@@ -800,7 +887,7 @@ Resources:
         Ref: Layer
 
   InstanceOpsWorks: 
-    DependsOn: AWSDirectory
+    DependsOn: AWSMicrosoftDirectory
     Type: AWS::OpsWorks::Instance
     DependsOn: Elb
     Properties: 
@@ -873,17 +960,6 @@ Outputs:
     Value:
       Ref: Layer
 
-  JumpboxIp:
-    Condition: DeployJumpbox
-    Export:
-      Name:
-        Fn::Sub: "${AWS::StackName}-JumpboxIp"
-    Value:
-      Fn::If:
-        - PublicJumpbox
-        - Fn::GetAtt: JumpboxEc2.PublicIp
-        - Fn::GetAtt: JumpboxEc2.PrivateIp
-
   DnsIpAddresses:
     Export:
       Name:
@@ -891,7 +967,7 @@ Outputs:
     Value:
       Fn::Join:
         - ", "
-        - Fn::GetAtt: AWSDirectory.DnsIpAddresses
+        - Fn::GetAtt: AWSMicrosoftDirectory.DnsIpAddresses
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -899,7 +975,7 @@ Metadata:
     - Label:
         default: ActiveDirectory
       Parameters:
-      - Size
+      - Edition
       - EnableSso
       - Name
       - ShortName
